@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<link rel="icon" href="images/RGBlab.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="images/RGBlab.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RGBlab</title>
+    <style>
+        :root {
+            --primary-color: #4a6bdf;
+            --secondary-color: #6c5ce7;
+            --accent-color: #00cec9;
+            --dark-bg: #2d3436;
+            --light-bg: #f5f6fa;
+            --text-dark: #2d3436;
+            --text-light: #f5f6fa;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --transition: all 0.3s ease;
+            --delete-zone-height: 60px;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.5s;
+        }
+        
+        #container {
+            position: relative;
+            width: 100vw;
+            height: calc(100vh - var(--delete-zone-height));
+        }
+        
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            cursor: move;
+            touch-action: none;
+            mix-blend-mode: screen;
+            will-change: transform;
+            transition: var(--transition);
+            width: 150px;
+            height: 150px;
+            background-color: rgba(255, 0, 0, 0.7);
+            box-shadow: var(--shadow);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .light .circle {
+            mix-blend-mode: multiply;
+            border-color: rgba(0, 0, 0, 0.2);
+        }
+        
+        #controls {
+            position: fixed;
+            bottom: var(--delete-zone-height);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 20px;
+            max-width: 90%;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        button {
+            padding: 12px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            min-width: 120px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .dark {
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+        }
+        
+        .light {
+            background-color: var(--light-bg);
+            color: var(--text-dark);
+        }
+        
+        .light #controls {
+            background-color: rgba(45, 52, 54, 0.9);
+        }
+        
+        .light button {
+            background-color: var(--accent-color);
+        }
+        
+        .mode-indicator {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            z-index: 100;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .light .color-picker {
+            background-color: rgba(45, 52, 54, 0.8);
+        }
+        
+        .color-picker input[type="color"] {
+            width: 50px;
+            height: 50px;
+            border: none;
+            cursor: pointer;
+            border-radius: 10px;
+            padding: 0;
+        }
+        
+        .color-picker input[type="text"] {
+            padding: 10px;
+            width: 100px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .group-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dark);
+            margin-bottom: -8px;
+            font-weight: bold;
+            opacity: 0.7;
+        }
+        
+        .light .group-title {
+            color: var(--text-light);
+        }
+        
+        .icon {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            margin-bottom: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+        
+        button:hover .tooltip {
+            opacity: 1;
+        }
+        
+        #delete-zone {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--delete-zone-height);
+            background-color: rgba(255, 0, 0, 0.1);
+            border-top: 2px dashed rgba(255, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: var(--transition);
+            z-index: 50;
+        }
+        
+        #delete-zone.active {
+            background-color: rgba(255, 0, 0, 0.3);
+            border-top: 2px dashed rgba(255, 0, 0, 0.8);
+        }
+        
+        .delete-icon {
+            font-size: 24px;
+            color: rgba(255, 0, 0, 0.5);
+            transition: var(--transition);
+        }
+        
+        #delete-zone.active .delete-icon {
+            color: rgba(255, 0, 0, 0.9);
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body class="dark">
+    <div id="container">
+        <!-- Круги будут добавляться здесь -->
+    </div>
+    
+    <div id="delete-zone">
+        <div class="delete-icon">✕</div>
+    </div>
+    
+    <div class="mode-indicator" id="modeIndicator">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <span>Режим сложения цветов (тёмный фон)</span>
+    </div>
+    
+    <div id="controls">
+        <div class="control-group">
+            <span class="group-title">Основные</span>
+            <button id="toggleTheme">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                Фон/Режим
+                <span class="tooltip">Переключить между светлым и тёмным режимом</span>
+            </button>
+            <button id="reset">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2.5 2v6h6M21.5 22v-6h-6"></path>
+                    <path d="M22 11.5A10 10 0 0 0 3.2 7.2M2 12.5a10 10 0 0 0 18.8 4.3"></path>
+                </svg>
+                Сбросить
+                <span class="tooltip">Удалить все круги и начать заново</span>
+            </button>
+        </div>
+        
+        <div class="control-group">
+            <span class="group-title">Цветовые наборы</span>
+            <button id="addRGB">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 2a10 10 0 0 0 0 20"></path>
+                    <path d="M12 2a10 10 0 0 1 0 20"></path>
+                </svg>
+                RGB
+                <span class="tooltip">Добавить красный, зелёный и синий круги</span>
+            </button>
+            <button id="addCMYK">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 2a10 10 0 0 0 0 20"></path>
+                    <path d="M12 2a10 10 0 0 1 0 20"></path>
+                    <path d="M12 2a10 10 0 0 1 10 10"></path>
+                </svg>
+                CMY
+                <span class="tooltip">Добавить голубой, пурпурный и жёлтый круги</span>
+            </button>
+        </div>
+        
+        <div class="control-group">
+            <span class="group-title">Свой цвет</span>
+            <button id="addCustom">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M7 21h10"></path>
+                    <path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9z"></path>
+                    <path d="M11 3h2v4h-2z"></path>
+                    <path d="M12.5 3h-1L7 8l2 1 3.5-5z"></path>
+                    <path d="M17 8l-4.5-5h1L17 8z"></path>
+                </svg>
+                Свой цвет
+                <span class="tooltip">Добавить круг с произвольным цветом</span>
+            </button>
+            <div class="color-picker" id="colorPicker" style="display: none;">
+                <input type="color" id="colorInput" value="#ff0000">
+                <input type="text" id="hexInput" placeholder="#RRGGBB">
+                <button id="confirmAdd" style="min-width: auto;">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 6L9 17l-5-5"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('container');
+            const toggleThemeBtn = document.getElementById('toggleTheme');
+            const resetBtn = document.getElementById('reset');
+            const addRGBBtn = document.getElementById('addRGB');
+            const addCMYKBtn = document.getElementById('addCMYK');
+            const addCustomBtn = document.getElementById('addCustom');
+            const colorPicker = document.getElementById('colorPicker');
+            const colorInput = document.getElementById('colorInput');
+            const hexInput = document.getElementById('hexInput');
+            const confirmAddBtn = document.getElementById('confirmAdd');
+            const modeIndicator = document.getElementById('modeIndicator');
+            const deleteZone = document.getElementById('delete-zone');
+            const body = document.body;
+            
+            let circleCounter = 0;
+            let activeCircle = null;
+            let offsetX, offsetY;
+            let isOverDeleteZone = false;
+            
+            // Загрузка сохранённых данных
+            function loadSettings() {
+                const savedCircles = localStorage.getItem('circles');
+                if (savedCircles) {
+                    container.innerHTML = savedCircles;
+                    reattachEventListeners();
+                }
+                
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'light') {
+                    body.classList.remove('dark');
+                    body.classList.add('light');
+                    updateModeIndicator();
+                }
+                
+                // Восстановление счётчика
+                const savedCounter = localStorage.getItem('circleCounter');
+                if (savedCounter) {
+                    circleCounter = parseInt(savedCounter);
+                }
+            }
+            
+            // Сохранение настроек
+            function saveSettings() {
+                localStorage.setItem('circles', container.innerHTML);
+                localStorage.setItem('theme', body.classList.contains('light') ? 'light' : 'dark');
+                localStorage.setItem('circleCounter', circleCounter.toString());
+            }
+            
+            // Обновление индикатора режима
+            function updateModeIndicator() {
+                const icon = modeIndicator.querySelector('.icon');
+                if (body.classList.contains('light')) {
+                    modeIndicator.innerHTML = `
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                        </svg>
+                        <span>Режим вычитания цветов (светлый фон)</span>
+                    `;
+                } else {
+                    modeIndicator.innerHTML = `
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                        <span>Режим сложения цветов (тёмный фон)</span>
+                    `;
+                }
+            }
+            
+            // Добавление нового круга
+            function addCircle(color, left, top) {
+                const circle = document.createElement('div');
+                circle.className = 'circle';
+                circle.id = 'circle-' + circleCounter++;
+                circle.style.backgroundColor = color;
+                circle.style.left = (left || Math.random() * (window.innerWidth - 150)) + 'px';
+                circle.style.top = (top || Math.random() * (window.innerHeight - 150 - 60)) + 'px'; // Учитываем зону удаления
+                
+                // Анимация появления
+                circle.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    circle.style.transform = 'scale(1)';
+                }, 10);
+                
+                // Обработчики для перемещения
+                circle.addEventListener('mousedown', startDrag);
+                circle.addEventListener('touchstart', touchStart, { passive: false });
+                
+                // Контекстное меню для удаления
+                circle.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    removeCircleWithAnimation(circle);
+                });
+                
+                container.appendChild(circle);
+                saveSettings();
+                return circle;
+            }
+            
+            // Удаление круга с анимацией
+            function removeCircleWithAnimation(circle) {
+                circle.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    container.removeChild(circle);
+                    saveSettings();
+                }, 300);
+            }
+            
+            // Перепривязка обработчиков событий после загрузки
+            function reattachEventListeners() {
+                document.querySelectorAll('.circle').forEach(circle => {
+                    circle.addEventListener('contextmenu', function(e) {
+                        e.preventDefault();
+                        removeCircleWithAnimation(circle);
+                    });
+                    circle.addEventListener('mousedown', startDrag);
+                    circle.addEventListener('touchstart', touchStart, { passive: false });
+                });
+            }
+            
+            // Добавление RGB кругов
+            function addRGB() {
+                addCircle('rgba(255, 0, 0, 0.7)', 100, 100);
+                addCircle('rgba(0, 255, 0, 0.7)', 200, 200);
+                addCircle('rgba(0, 0, 255, 0.7)', 150, 300);
+            }
+            
+            // Добавление CMY кругов
+            function addCMYK() {
+                addCircle('rgba(0, 255, 255, 0.7)', 100, 100); // Cyan
+                addCircle('rgba(255, 0, 255, 0.7)', 200, 200); // Magenta
+                addCircle('rgba(255, 255, 0, 0.7)', 150, 300); // Yellow
+            }
+            
+            // Обработчики для мыши
+            function startDrag(e) {
+                e.preventDefault();
+                activeCircle = e.target;
+                
+                const rect = activeCircle.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+                
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', stopDrag);
+            }
+            
+            // Обработчики для касаний
+            function touchStart(e) {
+                e.preventDefault();
+                if (e.touches.length > 1) return;
+                
+                activeCircle = e.target;
+                const touch = e.touches[0];
+                
+                const rect = activeCircle.getBoundingClientRect();
+                offsetX = touch.clientX - rect.left;
+                offsetY = touch.clientY - rect.top;
+                
+                document.addEventListener('touchmove', touchMove, { passive: false });
+                document.addEventListener('touchend', touchEnd);
+            }
+            
+            function drag(e) {
+                if (!activeCircle) return;
+                
+                const containerRect = container.getBoundingClientRect();
+                
+                let x = e.clientX - containerRect.left - offsetX;
+                let y = e.clientY - containerRect.top - offsetY;
+                
+                // Проверка нахождения в зоне удаления
+                const isInDeleteZone = e.clientY > window.innerHeight - 60;
+                if (isInDeleteZone !== isOverDeleteZone) {
+                    isOverDeleteZone = isInDeleteZone;
+                    deleteZone.classList.toggle('active', isOverDeleteZone);
+                    
+                    // Добавляем крестик на круг
+                    if (isOverDeleteZone) {
+                        activeCircle.innerHTML = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px;color:rgba(255,0,0,0.7);">✕</div>';
+                    } else {
+                        activeCircle.innerHTML = '';
+                    }
+                }
+                
+                // Ограничение перемещения внутри контейнера
+                x = Math.max(0, Math.min(x, containerRect.width - activeCircle.offsetWidth));
+                y = Math.max(0, Math.min(y, containerRect.height - activeCircle.offsetHeight));
+                
+                activeCircle.style.left = x + 'px';
+                activeCircle.style.top = y + 'px';
+            }
+            
+            function touchMove(e) {
+                if (!activeCircle || e.touches.length > 1) return;
+                e.preventDefault();
+                
+                const touch = e.touches[0];
+                const containerRect = container.getBoundingClientRect();
+                
+                let x = touch.clientX - containerRect.left - offsetX;
+                let y = touch.clientY - containerRect.top - offsetY;
+                
+                // Проверка нахождения в зоне удаления
+                const isInDeleteZone = touch.clientY > window.innerHeight - 60;
+                if (isInDeleteZone !== isOverDeleteZone) {
+                    isOverDeleteZone = isInDeleteZone;
+                    deleteZone.classList.toggle('active', isOverDeleteZone);
+                    
+                    // Добавляем крестик на круг
+                    if (isOverDeleteZone) {
+                        activeCircle.innerHTML = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px;color:rgba(255,0,0,0.7);">✕</div>';
+                    } else {
+                        activeCircle.innerHTML = '';
+                    }
+                }
+                
+                // Ограничение перемещения внутри контейнера
+                x = Math.max(0, Math.min(x, containerRect.width - activeCircle.offsetWidth));
+                y = Math.max(0, Math.min(y, containerRect.height - activeCircle.offsetHeight));
+                
+                activeCircle.style.left = x + 'px';
+                activeCircle.style.top = y + 'px';
+            }
+            
+            function stopDrag() {
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', stopDrag);
+                
+                // Если отпустили в зоне удаления - удаляем круг
+                if (isOverDeleteZone && activeCircle) {
+                    removeCircleWithAnimation(activeCircle);
+                }
+                
+                // Сбрасываем состояние зоны удаления
+                isOverDeleteZone = false;
+                deleteZone.classList.remove('active');
+                activeCircle = null;
+                saveSettings();
+            }
+            
+            function touchEnd() {
+                document.removeEventListener('touchmove', touchMove);
+                document.removeEventListener('touchend', touchEnd);
+                
+                // Если отпустили в зоне удаления - удаляем круг
+                if (isOverDeleteZone && activeCircle) {
+                    removeCircleWithAnimation(activeCircle);
+                }
+                
+                // Сбрасываем состояние зоны удаления
+                isOverDeleteZone = false;
+                deleteZone.classList.remove('active');
+                activeCircle = null;
+                saveSettings();
+            }
+            
+            // Синхронизация color input и hex input
+            colorInput.addEventListener('input', function() {
+                hexInput.value = colorInput.value;
+            });
+            
+            hexInput.addEventListener('input', function() {
+                if (/^#[0-9A-F]{6}$/i.test(hexInput.value)) {
+                    colorInput.value = hexInput.value;
+                }
+            });
+            
+            // Инициализация
+            loadSettings();
+            updateModeIndicator();
+            
+            // Обработчики кнопок
+            toggleThemeBtn.addEventListener('click', function() {
+                body.classList.toggle('dark');
+                body.classList.toggle('light');
+                updateModeIndicator();
+                saveSettings();
+            });
+            
+            addRGBBtn.addEventListener('click', addRGB);
+            
+            addCMYKBtn.addEventListener('click', addCMYK);
+            
+            addCustomBtn.addEventListener('click', function() {
+                colorPicker.style.display = colorPicker.style.display === 'flex' ? 'none' : 'flex';
+            });
+            
+            confirmAddBtn.addEventListener('click', function() {
+                const color = colorInput.value;
+                addCircle(color + '80'); // Добавляем альфа-канал 0.5
+                colorPicker.style.display = 'none';
+            });
+            
+            resetBtn.addEventListener('click', function() {
+                if (confirm('Вы уверены, что хотите удалить все круги и начать заново?')) {
+                    // Анимация исчезновения всех кругов
+                    document.querySelectorAll('.circle').forEach(circle => {
+                        circle.style.transform = 'scale(0)';
+                    });
+                    
+                    setTimeout(() => {
+                        container.innerHTML = '';
+                        circleCounter = 0;
+                        body.classList.remove('light');
+                        body.classList.add('dark');
+                        updateModeIndicator();
+                        saveSettings();
+                        addRGB(); // Добавляем базовые круги после сброса
+                    }, 300);
+                }
+            });
+            
+            // Добавим начальные круги, если их нет
+            if (container.children.length === 0) {
+                addRGB();
+            }
+        });
+    </script>
+</body>
+</html>

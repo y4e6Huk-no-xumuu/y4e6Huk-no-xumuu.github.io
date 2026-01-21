@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<link rel="icon" href="images/ConsoleRender.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="images/ConsoleRender.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Visualizer</title>
+    <style>
+        @font-face {
+            font-family: 'VT323';
+            src: url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        }
+        
+        body {
+            background-color: #000;
+            color: #0f0;
+            font-family: 'VT323', 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            line-height: 1;
+        }
+        
+        /* Mobile layout (original) */
+        .console {
+            border: 3px solid #0f0;
+            padding: 15px;
+            width: calc(100% - 36px);
+            height: calc(100vh - 36px);
+            margin: 0 auto;
+            background-color: #111;
+            box-shadow: 0 0 15px #0f0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #0f0;
+            padding-bottom: 5px;
+            flex-shrink: 0;
+        }
+        
+        .display-container {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .display {
+            background-color: #000;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            white-space: pre;
+            font-size: 14px;
+            border: 1px solid #333;
+            letter-spacing: 1px;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        
+        .control-group {
+            border: 1px solid #0f0;
+            padding: 8px;
+            background-color: rgba(0, 32, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 3px;
+            color: #0f0;
+            font-size: 14px;
+        }
+        
+        select, input, button {
+            background-color: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 4px;
+            width: 100%;
+            margin-bottom: 6px;
+            font-family: 'VT323', 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        button {
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 6px;
+        }
+        
+        button:hover {
+            background-color: #0f0;
+            color: #000;
+            text-shadow: 0 0 5px #000;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #0a0;
+            flex-shrink: 0;
+        }
+        
+        /* Desktop layout */
+        @media (min-width: 992px) {
+            body {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                grid-template-rows: auto 1fr;
+                height: 100vh;
+                padding: 10px;
+                box-sizing: border-box;
+                gap: 10px;
+                overflow: hidden;
+            }
+            
+            .console {
+                grid-column: 1;
+                grid-row: 1 / span 2;
+                width: auto;
+                height: auto;
+                margin: 0;
+                display: grid;
+                grid-template-rows: auto 1fr auto;
+                overflow: hidden;
+            }
+            
+            .info-panel {
+                grid-column: 2;
+                grid-row: 1;
+                border: 2px solid #0f0;
+                background-color: #111;
+                padding: 8px;
+                margin-bottom: 10px;
+                overflow: hidden;
+                font-size: 12px;
+                line-height: 1.2;
+            }
+            
+            .controls-panel {
+                grid-column: 2;
+                grid-row: 2;
+                border: 2px solid #0f0;
+                background-color: #111;
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                overflow: hidden;
+            }
+            
+            .controls {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin: 0;
+                flex-grow: 1;
+                overflow: hidden;
+            }
+            
+            .control-group {
+                margin-bottom: 0;
+            }
+            
+            .actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            
+            .header, .footer {
+                grid-column: 1;
+            }
+            
+            .info-panel h3 {
+                margin-top: 0;
+                margin-bottom: 8px;
+                font-size: 14px;
+            }
+            
+            .info-panel ul {
+                padding-left: 20px;
+                margin: 8px 0;
+            }
+            
+            .info-panel li {
+                margin-bottom: 4px;
+            }
+        }
+        
+        /* Cursor blink animation */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .cursor {
+            animation: blink 1s step-end infinite;
+        }
+        
+        @media (max-width: 600px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="console">
+        <div class="header">
+            <h1>ECM-7865/3D</h1>
+            <p>3D ASCII VISUALIZER v1.6</p>
+        </div>
+        
+        <div class="display-container">
+            <div class="display" id="display"></div>
+        </div>
+        
+        <div class="footer">
+            ECM-7865/3D © 1985-2023 | 3D ASCII VISUALIZER | v1.6
+        </div>
+    </div>
+    
+    <div class="info-panel">
+        <h3>SYSTEM INFO</h3>
+        <p>Welcome to ECM-7865/3D ASCII Visualizer</p>
+        <p>Controls:</p>
+        <ul>
+            <li>Select shape from dropdown</li>
+            <li>Adjust rotation with sliders</li>
+            <li>Use ZOOM to resize</li>
+            <li>ANIMATE for auto-rotation</li>
+            <li>COPY/SAVE to export</li>
+        </ul>
+        <p>Hotkeys (EN/RU):</p>
+        <ul>
+            <li>R - Random shape</li>
+            <li>A - Toggle animation</li>
+            <li>C - Copy ASCII</li>
+            <li>S - Save as image</li>
+        </ul>
+    </div>
+    
+    <div class="controls-panel">
+        <div class="controls">
+            <div class="control-group">
+                <label for="shape">SHAPE:</label>
+                <select id="shape">
+                    <option value="cube">Cube</option>
+                    <option value="sphere">Sphere (wireframe)</option>
+                    <option value="tetrahedron">Tetrahedron</option>
+                    <option value="icosahedron">Icosahedron</option>
+                    <option value="torus">Torus</option>
+                    <option value="cylinder">Cylinder</option>
+                    <option value="cone">Cone</option>
+                    <option value="pyramid">Pyramid</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="rotationX">ROT X: <span id="rotXValue">20</span> grad</label>
+                <input type="range" id="rotationX" min="0" max="360" value="20" step="1">
+                
+                <label for="rotationY">ROT Y: <span id="rotYValue">45</span> grad</label>
+                <input type="range" id="rotationY" min="0" max="360" value="45" step="1">
+                
+                <label for="rotationZ">ROT Z: <span id="rotZValue">0</span> grad</label>
+                <input type="range" id="rotationZ" min="0" max="360" value="0" step="1">
+            </div>
+            
+            <div class="control-group">
+                <label for="zoom">ZOOM: <span id="zoomValue">100</span>%</label>
+                <input type="range" id="zoom" min="50" max="200" value="100" step="5">
+                
+                <label for="fontSize">FONT SIZE: <span id="fontSizeValue">14</span>px</label>
+                <input type="range" id="fontSize" min="6" max="24" value="14" step="1">
+                
+                <label for="resolution">DETAIL: <span id="resolutionValue">20</span></label>
+                <input type="range" id="resolution" min="10" max="40" value="20" step="2">
+            </div>
+            
+            <div class="actions">
+                <button id="copyBtn">COPY ASCII</button>
+                <button id="saveBtn">SAVE IMAGE</button>
+                <button id="randomBtn">RANDOM</button>
+                <button id="animateBtn">ANIMATE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const display = document.getElementById('display');
+        const shapeSelect = document.getElementById('shape');
+        const rotationX = document.getElementById('rotationX');
+        const rotationY = document.getElementById('rotationY');
+        const rotationZ = document.getElementById('rotationZ');
+        const zoom = document.getElementById('zoom');
+        const fontSize = document.getElementById('fontSize');
+        const resolution = document.getElementById('resolution');
+        const copyBtn = document.getElementById('copyBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const randomBtn = document.getElementById('randomBtn');
+        const animateBtn = document.getElementById('animateBtn');
+        const rotXValue = document.getElementById('rotXValue');
+        const rotYValue = document.getElementById('rotYValue');
+        const rotZValue = document.getElementById('rotZValue');
+        const zoomValue = document.getElementById('zoomValue');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const resolutionValue = document.getElementById('resolutionValue');
+        const displayContainer = document.querySelector('.display-container');
+        
+        // Display parameters
+        let currentShape = 'cube';
+        let rotX = 20, rotY = 45, rotZ = 0;
+        let currentZoom = 100;
+        let currentFontSize = 14;
+        let currentResolution = 20;
+        let isAnimating = false;
+        let animationId = null;
+        let displayWidth = 0, displayHeight = 0;
+        
+        // Initialization
+        window.addEventListener('load', init);
+        window.addEventListener('resize', updateDisplaySize);
+        document.addEventListener('keydown', handleHotkeys);
+        
+        function init() {
+            updateDisplaySize();
+            updateFontSize();
+            updateDisplay();
+            
+            // Event listeners
+            shapeSelect.addEventListener('change', updateShape);
+            rotationX.addEventListener('input', updateRotation);
+            rotationY.addEventListener('input', updateRotation);
+            rotationZ.addEventListener('input', updateRotation);
+            zoom.addEventListener('input', updateZoom);
+            fontSize.addEventListener('input', updateFontSize);
+            resolution.addEventListener('input', updateResolution);
+            copyBtn.addEventListener('click', copyASCII);
+            saveBtn.addEventListener('click', saveAsImage);
+            randomBtn.addEventListener('click', randomize);
+            animateBtn.addEventListener('click', toggleAnimation);
+        }
+        
+        function handleHotkeys(e) {
+            const key = e.key.toUpperCase();
+            // Handle both English and Russian layout
+            switch(key) {
+                case 'R': case 'Ê': randomize(); break;
+                case 'A': case 'Ô': toggleAnimation(); break;
+                case 'C': case 'Ñ': copyASCII(); break;
+                case 'S': case 'Û': saveAsImage(); break;
+            }
+        }
+        
+        function updateDisplaySize() {
+            const style = getComputedStyle(display);
+            const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+            const paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+            
+            displayWidth = Math.floor((displayContainer.clientWidth - paddingX) / (currentFontSize * 0.6));
+            displayHeight = Math.floor((displayContainer.clientHeight - paddingY) / currentFontSize);
+            
+            updateDisplay();
+        }
+        
+        function updateShape() {
+            currentShape = shapeSelect.value;
+            updateDisplay();
+        }
+        
+        function updateRotation() {
+            rotX = parseInt(rotationX.value);
+            rotY = parseInt(rotationY.value);
+            rotZ = parseInt(rotationZ.value);
+            rotXValue.textContent = rotX;
+            rotYValue.textContent = rotY;
+            rotZValue.textContent = rotZ;
+            updateDisplay();
+        }
+        
+        function updateZoom() {
+            currentZoom = parseInt(zoom.value);
+            zoomValue.textContent = currentZoom;
+            updateDisplay();
+        }
+        
+        function updateFontSize() {
+            currentFontSize = parseInt(fontSize.value);
+            fontSizeValue.textContent = currentFontSize;
+            display.style.fontSize = currentFontSize + 'px';
+            updateDisplaySize();
+        }
+        
+        function updateResolution() {
+            currentResolution = parseInt(resolution.value);
+            resolutionValue.textContent = currentResolution;
+            updateDisplay();
+        }
+        
+        function randomize() {
+            // Random shape
+            const shapes = Array.from(shapeSelect.options).map(opt => opt.value);
+            shapeSelect.value = shapes[Math.floor(Math.random() * shapes.length)];
+            currentShape = shapeSelect.value;
+            
+            // Random rotation angles
+            rotX = Math.floor(Math.random() * 360);
+            rotY = Math.floor(Math.random() * 360);
+            rotZ = Math.floor(Math.random() * 360);
+            rotationX.value = rotX;
+            rotationY.value = rotY;
+            rotationZ.value = rotZ;
+            rotXValue.textContent = rotX;
+            rotYValue.textContent = rotY;
+            rotZValue.textContent = rotZ;
+            
+            // Random zoom
+            currentZoom = Math.floor(Math.random() * 151) + 50; // 50-200
+            zoom.value = currentZoom;
+            zoomValue.textContent = currentZoom;
+            
+            // Random resolution
+            currentResolution = Math.floor(Math.random() * 16) * 2 + 10; // 10-40 step 2
+            resolution.value = currentResolution;
+            resolutionValue.textContent = currentResolution;
+            
+            updateDisplay();
+        }
+        
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            animateBtn.textContent = isAnimating ? 'STOP' : 'ANIMATE';
+            
+            if (isAnimating) {
+                animate();
+            } else {
+                cancelAnimationFrame(animationId);
+            }
+        }
+        
+        function animate() {
+            rotY = (rotY + 1) % 360;
+            rotationY.value = rotY;
+            rotYValue.textContent = rotY;
+            updateDisplay();
+            
+            if (isAnimating) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+        
+        function copyASCII() {
+            const text = display.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'COPIED!';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Copy error: ', err);
+            });
+        }
+        
+        function saveAsImage() {
+            // Create canvas for rendering
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Get ASCII art dimensions
+            const text = display.textContent;
+            const lines = text.split('\n');
+            const lineHeight = currentFontSize * 1.2;
+            const maxLineLength = Math.max(...lines.map(line => line.length));
+            
+            // Calculate dimensions maintaining aspect ratio
+            const charWidth = currentFontSize * 0.6;
+            const textWidth = maxLineLength * charWidth;
+            const textHeight = lines.length * lineHeight;
+            
+            // Set canvas dimensions with padding
+            const padding = 20;
+            canvas.width = textWidth + padding * 2;
+            canvas.height = textHeight + padding * 2;
+            
+            // Canvas styles
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = `bold ${currentFontSize}px 'VT323', 'Courier New', monospace`;
+            ctx.fillStyle = '#0f0';
+            ctx.textBaseline = 'top';
+            
+            // Render text centered
+            lines.forEach((line, i) => {
+                const x = padding;
+                const y = padding + i * lineHeight;
+                ctx.fillText(line, x, y);
+            });
+            
+            // Add border
+            ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+            
+            // Add signature
+            ctx.font = `12px 'VT323', 'Courier New', monospace`;
+            ctx.fillText(`ECM-7865/3D | ${currentShape} | ${new Date().toLocaleString()}`, 
+                        padding, canvas.height - 15);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.download = `ECM-${currentShape}-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        function updateDisplay() {
+            const shape = getShapePoints(currentShape, currentResolution);
+            const rotatedShape = rotateShape(shape, rotX, rotY, rotZ);
+            const projectedShape = projectShape(rotatedShape, currentZoom);
+            const asciiArt = renderAsciiArt(projectedShape, displayWidth, displayHeight);
+            
+            display.textContent = asciiArt;
+        }
+        
+        function getShapePoints(shape, resolution) {
+            const points = [];
+            
+            switch(shape) {
+                case 'cube':
+                    // Cube (8 vertices + 12 edges)
+                    const cubeVertices = [];
+                    for (let x = -1; x <= 1; x += 2) {
+                        for (let y = -1; y <= 1; y += 2) {
+                            for (let z = -1; z <= 1; z += 2) {
+                                cubeVertices.push({x, y, z});
+                            }
+                        }
+                    }
+                    
+                    // Add edges
+                    const edges = [
+                        [0,1], [0,2], [0,4], [1,3], [1,5], 
+                        [2,3], [2,6], [3,7], [4,5], [4,6], 
+                        [5,7], [6,7]
+                    ];
+                    
+                    edges.forEach(edge => {
+                        const [i, j] = edge;
+                        const p1 = cubeVertices[i];
+                        const p2 = cubeVertices[j];
+                        const steps = resolution / 2;
+                        
+                        for (let t = 0; t <= steps; t++) {
+                            const ratio = t / steps;
+                            points.push({
+                                x: p1.x + (p2.x - p1.x) * ratio,
+                                y: p1.y + (p2.y - p1.y) * ratio,
+                                z: p1.z + (p2.z - p1.z) * ratio
+                            });
+                        }
+                    });
+                    break;
+                    
+                case 'sphere':
+                    // Sphere (meridians and parallels)
+                    const segments = resolution;
+                    const rings = Math.floor(resolution / 2);
+                    
+                    // Meridians
+                    for (let i = 0; i <= segments; i++) {
+                        const theta = 2 * Math.PI * i / segments;
+                        for (let j = 0; j <= rings; j++) {
+                            const phi = Math.PI * j / rings;
+                            const x = Math.sin(phi) * Math.cos(theta);
+                            const y = Math.cos(phi);
+                            const z = Math.sin(phi) * Math.sin(theta);
+                            points.push({x, y, z});
+                        }
+                    }
+                    
+                    // Parallels
+                    for (let j = 0; j <= rings; j++) {
+                        const phi = Math.PI * j / rings;
+                        for (let i = 0; i <= segments; i++) {
+                            const theta = 2 * Math.PI * i / segments;
+                            const x = Math.sin(phi) * Math.cos(theta);
+                            const y = Math.cos(phi);
+                            const z = Math.sin(phi) * Math.sin(theta);
+                            points.push({x, y, z});
+                        }
+                    }
+                    break;
+                    
+                case 'tetrahedron':
+                    // Tetrahedron (4 vertices + 6 edges)
+                    const tetraVertices = [
+                        {x: 1, y: 1, z: 1},
+                        {x: -1, y: -1, z: 1},
+                        {x: -1, y: 1, z: -1},
+                        {x: 1, y: -1, z: -1}
+                    ];
+                    
+                    const tetraEdges = [
+                        [0,1], [0,2], [0,3], [1,2], [1,3], [2,3]
+                    ];
+                    
+                    tetraEdges.forEach(edge => {
+                        const [i, j] = edge;
+                        const p1 = tetraVertices[i];
+                        const p2 = tetraVertices[j];
+                        const steps = resolution / 2;
+                        
+                        for (let t = 0; t <= steps; t++) {
+                            const ratio = t / steps;
+                            points.push({
+                                x: p1.x + (p2.x - p1.x) * ratio,
+                                y: p1.y + (p2.y - p1.y) * ratio,
+                                z: p1.z + (p2.z - p1.z) * ratio
+                            });
+                        }
+                    });
+                    break;
+                    
+                case 'icosahedron':
+                    // Icosahedron (12 vertices + 30 edges)
+                    const t = (1 + Math.sqrt(5)) / 2;
+                    const icoVertices = [
+                        {x: -1, y: t, z: 0}, {x: 1, y: t, z: 0},
+                        {x: -1, y: -t, z: 0}, {x: 1, y: -t, z: 0},
+                        {x: 0, y: -1, z: t}, {x: 0, y: 1, z: t},
+                        {x: 0, y: -1, z: -t}, {x: 0, y: 1, z: -t},
+                        {x: t, y: 0, z: -1}, {x: t, y: 0, z: 1},
+                        {x: -t, y: 0, z: -1}, {x: -t, y: 0, z: 1}
+                    ];
+                    
+                    const icoEdges = [
+                        [0,1], [0,5], [0,7], [0,10], [0,11],
+                        [1,5], [1,7], [1,8], [1,9],
+                        [2,3], [2,4], [2,6], [2,10], [2,11],
+                        [3,4], [3,6], [3,8], [3,9],
+                        [4,5], [4,9], [4,11],
+                        [5,9], [5,11],
+                        [6,7], [6,8], [6,10],
+                        [7,8], [7,10],
+                        [8,9], [10,11]
+                    ];
+                    
+                    icoEdges.forEach(edge => {
+                        const [i, j] = edge;
+                        const p1 = icoVertices[i];
+                        const p2 = icoVertices[j];
+                        const steps = resolution / 2;
+                        
+                        for (let t = 0; t <= steps; t++) {
+                            const ratio = t / steps;
+                            points.push({
+                                x: p1.x + (p2.x - p1.x) * ratio,
+                                y: p1.y + (p2.y - p1.y) * ratio,
+                                z: p1.z + (p2.z - p1.z) * ratio
+                            });
+                        }
+                    });
+                    break;
+                    
+                case 'torus':
+                    // Torus
+                    const torusRes = resolution;
+                    const R = 1.5, r = 0.5;
+                    
+                    for (let i = 0; i < torusRes; i++) {
+                        const u = 2 * Math.PI * i / torusRes;
+                        for (let j = 0; j < torusRes; j++) {
+                            const v = 2 * Math.PI * j / torusRes;
+                            const x = (R + r * Math.cos(v)) * Math.cos(u);
+                            const y = (R + r * Math.cos(v)) * Math.sin(u);
+                            const z = r * Math.sin(v);
+                            points.push({x, y, z});
+                        }
+                    }
+                    break;
+                    
+                case 'cylinder':
+                    // Cylinder
+                    const cylRes = resolution;
+                    const h = 2;
+                    
+                    // Side surface
+                    for (let i = 0; i < cylRes; i++) {
+                        const theta = 2 * Math.PI * i / cylRes;
+                        const x = Math.cos(theta);
+                        const z = Math.sin(theta);
+                        
+                        for (let j = 0; j <= cylRes; j++) {
+                            const y = h/2 - j * h / cylRes;
+                            points.push({x, y, z});
+                        }
+                    }
+                    
+                    // Top and bottom bases
+                    for (let r = 0; r <= 1; r += 0.1) {
+                        for (let i = 0; i < cylRes; i++) {
+                            const theta = 2 * Math.PI * i / cylRes;
+                            const x = r * Math.cos(theta);
+                            const z = r * Math.sin(theta);
+                            
+                            points.push({x, y: h/2, z});
+                            points.push({x, y: -h/2, z});
+                        }
+                    }
+                    break;
+                    
+                case 'cone':
+                    // Cone
+                    const coneRes = resolution;
+                    const coneH = 2;
+                    const coneR = 1;
+                    
+                    // Side surface
+                    for (let i = 0; i < coneRes; i++) {
+                        const theta = 2 * Math.PI * i / coneRes;
+                        for (let j = 0; j <= coneRes; j++) {
+                            const ratio = j / coneRes;
+                            const r = coneR * (1 - ratio);
+                            const x = r * Math.cos(theta);
+                            const z = r * Math.sin(theta);
+                            const y = coneH/2 - ratio * coneH;
+                            points.push({x, y, z});
+                        }
+                    }
+                    
+                    // Base
+                    for (let r = 0; r <= 1; r += 0.1) {
+                        for (let i = 0; i < coneRes; i++) {
+                            const theta = 2 * Math.PI * i / coneRes;
+                            const x = r * Math.cos(theta);
+                            const z = r * Math.sin(theta);
+                            points.push({x, y: -coneH/2, z});
+                        }
+                    }
+                    break;
+                    
+                case 'pyramid':
+                    // Square pyramid
+                    const pyrRes = resolution;
+                    const pyrH = 2;
+                    const pyrW = 1.5;
+                    
+                    // Base vertices
+                    const baseVertices = [
+                        {x: -pyrW, y: -pyrH/2, z: -pyrW},
+                        {x: pyrW, y: -pyrH/2, z: -pyrW},
+                        {x: pyrW, y: -pyrH/2, z: pyrW},
+                        {x: -pyrW, y: -pyrH/2, z: pyrW}
+                    ];
+                    
+                    // Apex
+                    const apex = {x: 0, y: pyrH/2, z: 0};
+                    
+                    // Base edges
+                    for (let i = 0; i < 4; i++) {
+                        const p1 = baseVertices[i];
+                        const p2 = baseVertices[(i+1)%4];
+                        for (let t = 0; t <= pyrRes; t++) {
+                            const ratio = t / pyrRes;
+                            points.push({
+                                x: p1.x + (p2.x - p1.x) * ratio,
+                                y: p1.y,
+                                z: p1.z + (p2.z - p1.z) * ratio
+                            });
+                        }
+                    }
+                    
+                    // Side edges
+                    baseVertices.forEach(vertex => {
+                        for (let t = 0; t <= pyrRes; t++) {
+                            const ratio = t / pyrRes;
+                            points.push({
+                                x: vertex.x + (apex.x - vertex.x) * ratio,
+                                y: vertex.y + (apex.y - vertex.y) * ratio,
+                                z: vertex.z + (apex.z - vertex.z) * ratio
+                            });
+                        }
+                    });
+                    break;
+            }
+            
+            return points;
+        }
+        
+        function rotateShape(points, rotX, rotY, rotZ) {
+            const radX = rotX * Math.PI / 180;
+            const radY = rotY * Math.PI / 180;
+            const radZ = rotZ * Math.PI / 180;
+            
+            // Pre-calculate trig functions
+            const cosX = Math.cos(radX), sinX = Math.sin(radX);
+            const cosY = Math.cos(radY), sinY = Math.sin(radY);
+            const cosZ = Math.cos(radZ), sinZ = Math.sin(radZ);
+            
+            return points.map(point => {
+                let {x, y, z} = point;
+                
+                // X rotation
+                const y1 = y * cosX - z * sinX;
+                const z1 = y * sinX + z * cosX;
+                y = y1;
+                z = z1;
+                
+                // Y rotation
+                const x2 = x * cosY + z * sinY;
+                const z2 = -x * sinY + z * cosY;
+                x = x2;
+                z = z2;
+                
+                // Z rotation
+                const x3 = x * cosZ - y * sinZ;
+                const y3 = x * sinZ + y * cosZ;
+                x = x3;
+                y = y3;
+                
+                return {x, y, z};
+            });
+        }
+        
+        function projectShape(points, zoom) {
+            const distance = 5;
+            const scale = zoom / 100;
+            
+            return points.map(point => {
+                const {x, y, z} = point;
+                const factor = distance / (distance - z);
+                return {
+                    x: x * factor * scale,
+                    y: y * factor * scale,
+                    z: z * scale
+                };
+            });
+        }
+        
+        function renderAsciiArt(points, width, height) {
+            // Create character grid
+            const grid = Array(height).fill().map(() => Array(width).fill(' '));
+            
+            // Scale and center points
+            const scale = Math.min(width, height) / 4;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // Use density map for smoothing
+            const densityMap = Array(height).fill().map(() => Array(width).fill(0));
+            
+            points.forEach(point => {
+                const x = Math.round(point.x * scale + centerX);
+                const y = Math.round(point.y * scale + centerY);
+                
+                if (x >= 0 && x < width && y >= 0 && y < height) {
+                    densityMap[y][x]++;
+                }
+            });
+            
+            // Convert density to ASCII characters
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const density = densityMap[y][x];
+                    if (density > 0) {
+                        // Density gradation
+                        if (density > 5) grid[y][x] = '@';
+                        else if (density > 3) grid[y][x] = '#';
+                        else if (density > 1) grid[y][x] = '*';
+                        else grid[y][x] = '.';
+                    }
+                }
+            }
+            
+            // Convert grid to string
+            return grid.map(row => row.join('')).join('\n');
+        }
+    </script>
+</body>
+</html>

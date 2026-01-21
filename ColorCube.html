@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="icon" href="images/ColorCube.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="images/ColorCube.ico" type="image/x-icon">
+    <title>Color Cube</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --panel-color: #222222;
+            --text-color: #ffffff;
+            --accent-color: #888888;
+            --control-color: #333333;
+            --border-radius: 6px;
+        }
+        
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            font-size: 1em;
+        }
+        
+        canvas { 
+            display: block; 
+            cursor: grab;
+        }
+        
+        canvas:active {
+            cursor: grabbing;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: var(--panel-color);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            width: 400px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            transform: scale(0.8);
+            transform-origin: bottom left;
+            transition: opacity 0.3s;
+        }
+        
+        .controls.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        input[type="range"] {
+            flex-grow: 1;
+            height: 5px;
+            background: var(--control-color);
+            border-radius: 3px;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        input[type="number"], input[type="text"] {
+            width: 80px;
+            padding: 5px;
+            background: var(--control-color);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            text-align: center;
+        }
+        
+        input[type="color"] {
+            width: 35px;
+            height: 35px;
+            padding: 0;
+            border: 1px solid var(--control-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+        
+        .color-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 6px;
+            background: var(--control-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: var(--accent-color);
+        }
+        
+        .status {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            padding: 8px 16px;
+            border-radius: var(--border-radius);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        .toggle-ui {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            z-index: 100;
+            transition: background 0.2s;
+        }
+        
+        .toggle-ui:hover {
+            background: rgba(0,0,0,0.7);
+        }
+        
+        .render-progress {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 5px 15px;
+            border-radius: var(--border-radius);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="spaceCanvas"></canvas>
+    <div class="status" id="statusMessage"></div>
+    <div class="render-progress" id="renderProgress"></div>
+    <button class="toggle-ui" id="toggleUI">≡</button>
+    
+    <div class="controls" id="controls">
+        <div class="control-group">
+            <label for="pointCount">Количество точек</label>
+            <div class="range-container">
+                <input type="range" id="pointCount" min="100" max="10000" step="100" value="2000">
+                <input type="number" id="pointCountValue" value="2000" min="100" max="10000">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="pointSize">Размер точек</label>
+            <div class="range-container">
+                <input type="range" id="pointSize" min="1" max="50" step="0.5" value="5">
+                <input type="number" id="pointSizeValue" value="5" min="1" max="50" step="0.5">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="spaceSize">Размер куба</label>
+            <div class="range-container">
+                <input type="range" id="spaceSize" min="50" max="500" step="10" value="200">
+                <input type="number" id="spaceSizeValue" value="200" min="50" max="500">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="edgeWidth">Толщина рёбер</label>
+            <div class="range-container">
+                <input type="range" id="edgeWidth" min="1" max="10" step="0.5" value="1">
+                <input type="number" id="edgeWidthValue" value="1" min="1" max="10" step="0.5">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Цвет рёбер</label>
+            <div class="color-input">
+                <input type="color" id="edgeColor" value="#888888">
+                <input type="text" id="edgeColorValue" value="#888888" maxlength="7">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Цвет фона</label>
+            <div class="color-input">
+                <input type="color" id="bgColor" value="#0a0a0a">
+                <input type="text" id="bgColorValue" value="#0a0a0a" maxlength="7">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="xCutMin">Ось X (Min/Max)</label>
+            <div class="range-container">
+                <input type="range" id="xCutMin" min="0" max="100" value="0">
+                <input type="number" id="xCutMinValue" value="0" min="0" max="100">
+            </div>
+            <div class="range-container" style="margin-top: 4px;">
+                <input type="range" id="xCutMax" min="0" max="100" value="100">
+                <input type="number" id="xCutMaxValue" value="100" min="0" max="100">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="yCutMin">Ось Y (Min/Max)</label>
+            <div class="range-container">
+                <input type="range" id="yCutMin" min="0" max="100" value="0">
+                <input type="number" id="yCutMinValue" value="0" min="0" max="100">
+            </div>
+            <div class="range-container" style="margin-top: 4px;">
+                <input type="range" id="yCutMax" min="0" max="100" value="100">
+                <input type="number" id="yCutMaxValue" value="100" min="0" max="100">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label for="zCutMin">Ось Z (Min/Max)</label>
+            <div class="range-container">
+                <input type="range" id="zCutMin" min="0" max="100" value="0">
+                <input type="number" id="zCutMinValue" value="0" min="0" max="100">
+            </div>
+            <div class="range-container" style="margin-top: 4px;">
+                <input type="range" id="zCutMax" min="0" max="100" value="100">
+                <input type="number" id="zCutMaxValue" value="100" min="0" max="100">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Автоповорот</label>
+            <div class="range-container">
+                <label for="rotateXSpeed">X:</label>
+                <input type="range" id="rotateXSpeed" min="-5" max="5" step="0.1" value="0">
+                <input type="number" id="rotateXSpeedValue" value="0" min="-5" max="5" step="0.1" style="width: 50px;">
+            </div>
+            <div class="range-container" style="margin-top: 4px;">
+                <label for="rotateYSpeed">Y:</label>
+                <input type="range" id="rotateYSpeed" min="-5" max="5" step="0.1" value="0">
+                <input type="number" id="rotateYSpeedValue" value="0" min="-5" max="5" step="0.1" style="width: 50px;">
+            </div>
+            <div class="range-container" style="margin-top: 4px;">
+                <label for="rotateZSpeed">Z:</label>
+                <input type="range" id="rotateZSpeed" min="-5" max="5" step="0.1" value="0">
+                <input type="number" id="rotateZSpeedValue" value="0" min="-5" max="5" step="0.1" style="width: 50px;">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Настройки скриншота</label>
+            <div class="range-container">
+                <label for="screenshotWidth">Ширина:</label>
+                <input type="number" id="screenshotWidth" value="1920" min="100" max="10000" step="1" style="width: 70px;">
+            </div>
+            <div class="range-container" style="margin-top: 4px;">
+                <label for="screenshotHeight">Высота:</label>
+                <input type="number" id="screenshotHeight" value="1080" min="100" max="10000" step="1" style="width: 70px;">
+            </div>
+            <div class="checkbox-container">
+                <input type="checkbox" id="renderEdges">
+                <label for="renderEdges">Показывать рёбра</label>
+            </div>
+            <div class="checkbox-container">
+                <input type="checkbox" id="renderBackground" checked>
+                <label for="renderBackground">Показывать фон</label>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <button id="regenerateBtn">Обновить</button>
+            <button id="autoUpdateBtn">Автообновление</button>
+            <button id="resetCameraBtn">Сброс</button>
+            <button id="screenshotBtn">Скриншот</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('spaceCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusMessage = document.getElementById('statusMessage');
+        const renderProgress = document.getElementById('renderProgress');
+        const controls = document.getElementById('controls');
+        const toggleUI = document.getElementById('toggleUI');
+        
+        // Элементы управления
+        const elements = {
+            pointCount: ['pointCount', 'pointCountValue'],
+            pointSize: ['pointSize', 'pointSizeValue'],
+            spaceSize: ['spaceSize', 'spaceSizeValue'],
+            edgeWidth: ['edgeWidth', 'edgeWidthValue'],
+            edgeColor: ['edgeColor', 'edgeColorValue'],
+            bgColor: ['bgColor', 'bgColorValue'],
+            xCutMin: ['xCutMin', 'xCutMinValue'],
+            xCutMax: ['xCutMax', 'xCutMaxValue'],
+            yCutMin: ['yCutMin', 'yCutMinValue'],
+            yCutMax: ['yCutMax', 'yCutMaxValue'],
+            zCutMin: ['zCutMin', 'zCutMinValue'],
+            zCutMax: ['zCutMax', 'zCutMaxValue'],
+            rotateXSpeed: ['rotateXSpeed', 'rotateXSpeedValue'],
+            rotateYSpeed: ['rotateYSpeed', 'rotateYSpeedValue'],
+            rotateZSpeed: ['rotateZSpeed', 'rotateZSpeedValue']
+        };
+        
+        // Синхронизация элементов управления
+        Object.entries(elements).forEach(([key, [sliderId, inputId]]) => {
+            const slider = document.getElementById(sliderId);
+            const input = document.getElementById(inputId);
+            
+            slider.addEventListener('input', () => {
+                input.value = slider.value;
+                if (autoUpdate) scheduleUpdate();
+            });
+            
+            input.addEventListener('input', () => {
+                if (input.value === '') return;
+                
+                const min = parseFloat(slider.min);
+                const max = parseFloat(slider.max);
+                let value = parseFloat(input.value);
+                
+                if (isNaN(value)) value = slider.value;
+                value = Math.max(min, Math.min(max, value));
+                
+                slider.value = value;
+                input.value = value;
+                
+                if (autoUpdate) scheduleUpdate();
+            });
+        });
+        
+        // Чекбоксы
+        document.getElementById('renderEdges').addEventListener('change', function() {
+            config.RENDER_EDGES = this.checked;
+            if (autoUpdate) scheduleUpdate();
+        });
+        
+        document.getElementById('renderBackground').addEventListener('change', function() {
+            config.RENDER_BACKGROUND = this.checked;
+            if (autoUpdate) scheduleUpdate();
+        });
+        
+        // Цветовые поля
+        document.getElementById('edgeColor').addEventListener('input', function() {
+            document.getElementById('edgeColorValue').value = this.value;
+            if (autoUpdate) scheduleUpdate();
+        });
+        
+        document.getElementById('edgeColorValue').addEventListener('input', function() {
+            if (/^#[0-9A-Fa-f]{6}$/i.test(this.value)) {
+                document.getElementById('edgeColor').value = this.value;
+                if (autoUpdate) scheduleUpdate();
+            }
+        });
+        
+        document.getElementById('bgColor').addEventListener('input', function() {
+            document.getElementById('bgColorValue').value = this.value;
+            document.body.style.backgroundColor = this.value;
+            if (autoUpdate) scheduleUpdate();
+        });
+        
+        document.getElementById('bgColorValue').addEventListener('input', function() {
+            if (/^#[0-9A-Fa-f]{6}$/i.test(this.value)) {
+                document.getElementById('bgColor').value = this.value;
+                document.body.style.backgroundColor = this.value;
+                if (autoUpdate) scheduleUpdate();
+            }
+        });
+        
+        // Настройки
+        let config = {
+            POINT_COUNT: 2000,
+            POINT_SIZE: 5,
+            SPACE_SIZE: 200,
+            EDGE_WIDTH: 1,
+            EDGE_COLOR: '#888888',
+            BG_COLOR: '#0a0a0a',
+            X_CUT_MIN: 0,
+            X_CUT_MAX: 100,
+            Y_CUT_MIN: 0,
+            Y_CUT_MAX: 100,
+            Z_CUT_MIN: 0,
+            Z_CUT_MAX: 100,
+            FOCAL_LENGTH: 1000,
+            zoom: 1,
+            ROTATE_X_SPEED: 0,
+            ROTATE_Y_SPEED: 0,
+            ROTATE_Z_SPEED: 0,
+            RENDER_EDGES: false,
+            RENDER_BACKGROUND: true,
+            SCREENSHOT_WIDTH: 1920,
+            SCREENSHOT_HEIGHT: 1080
+        };
+        
+        // Состояние
+        let points = [];
+        let projectedPoints = [];
+        let cameraX = 0, cameraY = 0, cameraZ = -300;
+        let rotX = 0, rotY = 0, rotZ = 0;
+        let isDragging = false;
+        let lastX, lastY;
+        let autoUpdate = false;
+        let updateTimeout = null;
+        let isRendering = false;
+        let showUI = true;
+        
+        // Инициализация
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            generatePoints();
+            updateControls();
+            
+            // Установка обработчиков для настроек скриншота
+            document.getElementById('screenshotWidth').addEventListener('input', function() {
+                config.SCREENSHOT_WIDTH = parseInt(this.value) || 1920;
+            });
+            
+            document.getElementById('screenshotHeight').addEventListener('input', function() {
+                config.SCREENSHOT_HEIGHT = parseInt(this.value) || 1080;
+            });
+        }
+        
+        // Генерация точек
+        function generatePoints() {
+            points = [];
+            const halfSize = config.SPACE_SIZE / 2;
+            
+            for (let i = 0; i < config.POINT_COUNT; i++) {
+                points.push({
+                    x: Math.random() * config.SPACE_SIZE - halfSize,
+                    y: Math.random() * config.SPACE_SIZE - halfSize,
+                    z: Math.random() * config.SPACE_SIZE - halfSize
+                });
+            }
+        }
+        
+        // Обновление элементов управления
+        function updateControls() {
+            document.getElementById('pointCount').value = config.POINT_COUNT;
+            document.getElementById('pointCountValue').value = config.POINT_COUNT;
+            document.getElementById('pointSize').value = config.POINT_SIZE;
+            document.getElementById('pointSizeValue').value = config.POINT_SIZE;
+            document.getElementById('spaceSize').value = config.SPACE_SIZE;
+            document.getElementById('spaceSizeValue').value = config.SPACE_SIZE;
+            document.getElementById('edgeWidth').value = config.EDGE_WIDTH;
+            document.getElementById('edgeWidthValue').value = config.EDGE_WIDTH;
+            document.getElementById('edgeColor').value = config.EDGE_COLOR;
+            document.getElementById('edgeColorValue').value = config.EDGE_COLOR;
+            document.getElementById('bgColor').value = config.BG_COLOR;
+            document.getElementById('bgColorValue').value = config.BG_COLOR;
+            document.getElementById('xCutMin').value = config.X_CUT_MIN;
+            document.getElementById('xCutMinValue').value = config.X_CUT_MIN;
+            document.getElementById('xCutMax').value = config.X_CUT_MAX;
+            document.getElementById('xCutMaxValue').value = config.X_CUT_MAX;
+            document.getElementById('yCutMin').value = config.Y_CUT_MIN;
+            document.getElementById('yCutMinValue').value = config.Y_CUT_MIN;
+            document.getElementById('yCutMax').value = config.Y_CUT_MAX;
+            document.getElementById('yCutMaxValue').value = config.Y_CUT_MAX;
+            document.getElementById('zCutMin').value = config.Z_CUT_MIN;
+            document.getElementById('zCutMinValue').value = config.Z_CUT_MIN;
+            document.getElementById('zCutMax').value = config.Z_CUT_MAX;
+            document.getElementById('zCutMaxValue').value = config.Z_CUT_MAX;
+            document.getElementById('rotateXSpeed').value = config.ROTATE_X_SPEED;
+            document.getElementById('rotateXSpeedValue').value = config.ROTATE_X_SPEED;
+            document.getElementById('rotateYSpeed').value = config.ROTATE_Y_SPEED;
+            document.getElementById('rotateYSpeedValue').value = config.ROTATE_Y_SPEED;
+            document.getElementById('rotateZSpeed').value = config.ROTATE_Z_SPEED;
+            document.getElementById('rotateZSpeedValue').value = config.ROTATE_Z_SPEED;
+            document.getElementById('renderEdges').checked = config.RENDER_EDGES;
+            document.getElementById('renderBackground').checked = config.RENDER_BACKGROUND;
+            document.getElementById('screenshotWidth').value = config.SCREENSHOT_WIDTH;
+            document.getElementById('screenshotHeight').value = config.SCREENSHOT_HEIGHT;
+            
+            document.body.style.backgroundColor = config.BG_COLOR;
+        }
+        
+        // Запланированное обновление
+        function scheduleUpdate() {
+            if (updateTimeout) clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(applySettings, 100);
+        }
+        
+        // Применение настроек
+        function applySettings() {
+            config.POINT_COUNT = parseInt(document.getElementById('pointCount').value);
+            config.POINT_SIZE = parseFloat(document.getElementById('pointSize').value);
+            config.SPACE_SIZE = parseInt(document.getElementById('spaceSize').value);
+            config.EDGE_WIDTH = parseFloat(document.getElementById('edgeWidth').value);
+            config.EDGE_COLOR = document.getElementById('edgeColor').value;
+            config.BG_COLOR = document.getElementById('bgColor').value;
+            config.X_CUT_MIN = parseInt(document.getElementById('xCutMin').value);
+            config.X_CUT_MAX = parseInt(document.getElementById('xCutMax').value);
+            config.Y_CUT_MIN = parseInt(document.getElementById('yCutMin').value);
+            config.Y_CUT_MAX = parseInt(document.getElementById('yCutMax').value);
+            config.Z_CUT_MIN = parseInt(document.getElementById('zCutMin').value);
+            config.Z_CUT_MAX = parseInt(document.getElementById('zCutMax').value);
+            config.ROTATE_X_SPEED = parseFloat(document.getElementById('rotateXSpeed').value);
+            config.ROTATE_Y_SPEED = parseFloat(document.getElementById('rotateYSpeed').value);
+            config.ROTATE_Z_SPEED = parseFloat(document.getElementById('rotateZSpeed').value);
+            config.RENDER_EDGES = document.getElementById('renderEdges').checked;
+            config.RENDER_BACKGROUND = document.getElementById('renderBackground').checked;
+            
+            document.body.style.backgroundColor = config.BG_COLOR;
+            generatePoints();
+        }
+        
+        // Вершины куба
+        const cubeVertices = [
+            {x: -1, y: -1, z: -1}, // 0
+            {x: 1, y: -1, z: -1},  // 1
+            {x: 1, y: 1, z: -1},   // 2
+            {x: -1, y: 1, z: -1},  // 3
+            {x: -1, y: -1, z: 1},  // 4
+            {x: 1, y: -1, z: 1},   // 5
+            {x: 1, y: 1, z: 1},    // 6
+            {x: -1, y: 1, z: 1}    // 7
+        ];
+        
+        // Рёбра куба
+        const cubeEdges = [
+            [0,1], [1,2], [2,3], [3,0], // задняя грань
+            [4,5], [5,6], [6,7], [7,4], // передняя грань
+            [0,4], [1,5], [2,6], [3,7]  // соединительные рёбра
+        ];
+        
+        // Обработчики событий
+        canvas.addEventListener('mousedown', (e) => {
+            if (isRendering) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Проверяем, была ли нажата точка
+            let clickedPoint = null;
+            let minDistance = Infinity;
+            
+            // Проверяем точки в обратном порядке (от ближних к дальним)
+            for (let i = projectedPoints.length - 1; i >= 0; i--) {
+                const p = projectedPoints[i];
+                const distance = Math.sqrt(
+                    Math.pow(p.x - mouseX, 2) + 
+                    Math.pow(p.y - mouseY, 2)
+                );
+                
+                // Учитываем размер точки при проверке клика
+                if (distance < config.POINT_SIZE * 1.5 && distance < minDistance) {
+                    minDistance = distance;
+                    clickedPoint = p;
+                }
+            }
+            
+            if (clickedPoint) {
+                // Получаем цвет точки
+                const hslColor = getHSLColor(clickedPoint.original);
+                const hexColor = hslToHex(hslColor.h, hslColor.s, hslColor.l);
+                
+                // Создаем временный элемент для копирования
+                const tempInput = document.createElement('input');
+                tempInput.value = hexColor;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showStatus(`Скопировано: ${hexColor}`);
+                    } else {
+                        showStatus('Ошибка копирования');
+                    }
+                } catch (err) {
+                    showStatus('Ошибка копирования');
+                    console.error('Ошибка копирования:', err);
+                }
+                
+                document.body.removeChild(tempInput);
+                return;
+            }
+            
+            // Если точка не найдена - начинаем вращение
+            isDragging = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            canvas.style.cursor = 'grab';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            canvas.style.cursor = 'grab';
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging || isRendering) return;
+            
+            const dx = e.clientX - lastX;
+            const dy = e.clientY - lastY;
+            
+            rotY += dx * 0.01;
+            rotX += dy * 0.01;
+            
+            lastX = e.clientX;
+            lastY = e.clientY;
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            if (isRendering) return;
+            
+            config.zoom += e.deltaY * -0.001;
+            config.zoom = Math.min(Math.max(0.5, config.zoom), 3);
+            e.preventDefault();
+        });
+        
+        // Переключение интерфейса
+        toggleUI.addEventListener('click', () => {
+            showUI = !showUI;
+            controls.classList.toggle('hidden', !showUI);
+        });
+        
+        // Показать статус
+        function showStatus(message) {
+            statusMessage.textContent = message;
+            statusMessage.style.opacity = 1;
+            
+            setTimeout(() => {
+                statusMessage.style.opacity = 0;
+            }, 2000);
+        }
+        
+        // Получение HSL цвета из координат точки
+        function getHSLColor(point) {
+            const halfSize = config.SPACE_SIZE / 2;
+            const xNorm = (point.x + halfSize) / config.SPACE_SIZE;
+            const yNorm = (point.y + halfSize) / config.SPACE_SIZE;
+            const zNorm = (point.z + halfSize) / config.SPACE_SIZE;
+            
+            return {
+                h: zNorm * 360,
+                s: yNorm * 100,
+                l: xNorm * 100
+            };
+        }
+        
+        // Конвертация HSL в HEX
+        function hslToHex(h, s, l) {
+            h /= 360;
+            s /= 100;
+            l /= 100;
+            
+            let r, g, b;
+            
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            
+            const toHex = x => {
+                const hex = Math.round(x * 255).toString(16).padStart(2, '0');
+                return hex;
+            };
+            
+            return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+        }
+        
+        // Кнопки управления
+        document.getElementById('regenerateBtn').addEventListener('click', () => {
+            applySettings();
+        });
+        
+        document.getElementById('autoUpdateBtn').addEventListener('click', function() {
+            autoUpdate = !autoUpdate;
+            this.textContent = autoUpdate ? 'Авто: ON' : 'Авто: OFF';
+            this.style.background = autoUpdate ? '#888888' : '';
+            this.style.color = autoUpdate ? '#000000' : '';
+        });
+        
+        document.getElementById('resetCameraBtn').addEventListener('click', () => {
+            cameraX = 0;
+            cameraY = 0;
+            cameraZ = -300;
+            rotX = 0;
+            rotY = 0;
+            rotZ = 0;
+            config.zoom = 1;
+        });
+        
+        document.getElementById('screenshotBtn').addEventListener('click', takeScreenshot);
+        
+        // Создание скриншота
+        function takeScreenshot() {
+            isRendering = true;
+            renderProgress.style.display = 'block';
+            renderProgress.textContent = 'Создание скриншота...';
+            
+            // Сохраняем текущие параметры
+            const originalWidth = canvas.width;
+            const originalHeight = canvas.height;
+            
+            try {
+                // Создаем временный canvas для скриншота
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = config.SCREENSHOT_WIDTH;
+                tempCanvas.height = config.SCREENSHOT_HEIGHT;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // Отрисовываем сцену на временном canvas
+                drawScene(tempCtx, tempCanvas.width, tempCanvas.height);
+                
+                // Создаем данные для скачивания
+                const imageData = tempCanvas.toDataURL('image/png');
+                
+                // Создаем ссылку для скачивания
+                const link = document.createElement('a');
+                link.href = imageData;
+                link.download = `cube_screenshot_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showStatus('Скриншот сохранён');
+            } catch (e) {
+                console.error('Ошибка создания скриншота:', e);
+                showStatus('Ошибка создания скриншота');
+            } finally {
+                isRendering = false;
+                renderProgress.style.display = 'none';
+            }
+        }
+        
+        // Отрисовка сцены на указанном контексте
+        function drawScene(context, width, height) {
+            context.clearRect(0, 0, width, height);
+            
+            // Фон
+            if (config.RENDER_BACKGROUND) {
+                context.fillStyle = config.BG_COLOR;
+                context.fillRect(0, 0, width, height);
+            } else {
+                context.clearRect(0, 0, width, height);
+            }
+            
+            // Проекция вершин куба
+            const projectedVertices = cubeVertices.map(v => {
+                const scaled = {
+                    x: v.x * config.SPACE_SIZE/2,
+                    y: v.y * config.SPACE_SIZE/2,
+                    z: v.z * config.SPACE_SIZE/2
+                };
+                return projectForScreenshot(scaled, width, height);
+            });
+            
+            // Рисуем рёбра куба
+            if (config.RENDER_EDGES) {
+                context.strokeStyle = config.EDGE_COLOR;
+                context.lineWidth = config.EDGE_WIDTH;
+                cubeEdges.forEach(edge => {
+                    const [i1, i2] = edge;
+                    const v1 = projectedVertices[i1];
+                    const v2 = projectedVertices[i2];
+                    
+                    context.beginPath();
+                    context.moveTo(v1.x, v1.y);
+                    context.lineTo(v2.x, v2.y);
+                    context.stroke();
+                });
+            }
+            
+            // Фильтрация и проекция точек
+            const screenshotPoints = points
+                .filter(p => isPointVisible(p))
+                .map(p => projectForScreenshot(p, width, height))
+                .sort((a, b) => b.z - a.z);
+            
+            // Рисуем точки
+            screenshotPoints.forEach(p => {
+                context.fillStyle = getColor(p.original);
+                context.beginPath();
+                context.arc(p.x, p.y, config.POINT_SIZE, 0, Math.PI * 2);
+                context.fill();
+            });
+        }
+        
+        // Проекция для скриншота с учетом новых размеров
+        function projectForScreenshot(point, width, height) {
+            let {x, y, z} = point;
+            
+            // Вращение по X
+            const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+            const y1 = y * cosX - z * sinX;
+            const z1 = y * sinX + z * cosX;
+            
+            // Вращение по Y
+            const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+            const x1 = x * cosY + z1 * sinY;
+            const z2 = -x * sinY + z1 * cosY;
+            
+            // Вращение по Z
+            const cosZ = Math.cos(rotZ), sinZ = Math.sin(rotZ);
+            const x2 = x1 * cosZ - y1 * sinZ;
+            const y2 = x1 * sinZ + y1 * cosZ;
+            
+            // Перспектива
+            const scale = config.FOCAL_LENGTH / (config.FOCAL_LENGTH + z2 + cameraZ) * config.zoom;
+            return {
+                x: x2 * scale + width/2,
+                y: y2 * scale + height/2,
+                z: z2,
+                original: point
+            };
+        }
+        
+        // Проекция 3D в 2D
+        function project(point) {
+            let {x, y, z} = point;
+            
+            // Вращение по X
+            const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+            const y1 = y * cosX - z * sinX;
+            const z1 = y * sinX + z * cosX;
+            
+            // Вращение по Y
+            const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+            const x1 = x * cosY + z1 * sinY;
+            const z2 = -x * sinY + z1 * cosY;
+            
+            // Вращение по Z
+            const cosZ = Math.cos(rotZ), sinZ = Math.sin(rotZ);
+            const x2 = x1 * cosZ - y1 * sinZ;
+            const y2 = x1 * sinZ + y1 * cosZ;
+            
+            // Перспектива
+            const scale = config.FOCAL_LENGTH / (config.FOCAL_LENGTH + z2 + cameraZ) * config.zoom;
+            return {
+                x: x2 * scale + canvas.width/2,
+                y: y2 * scale + canvas.height/2,
+                z: z2,
+                original: point
+            };
+        }
+        
+        // Цвет на основе координат
+        function getColor(point) {
+            const hsl = getHSLColor(point);
+            return `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+        }
+        
+        // Проверка видимости точки
+        function isPointVisible(point) {
+            const halfSize = config.SPACE_SIZE / 2;
+            const fullSize = config.SPACE_SIZE;
+            
+            // Нормализация координат к 0-100
+            const xNorm = ((point.x + halfSize) / fullSize) * 100;
+            const yNorm = ((point.y + halfSize) / fullSize) * 100;
+            const zNorm = ((point.z + halfSize) / fullSize) * 100;
+            
+            return xNorm >= config.X_CUT_MIN && xNorm <= config.X_CUT_MAX &&
+                   yNorm >= config.Y_CUT_MIN && yNorm <= config.Y_CUT_MAX &&
+                   zNorm >= config.Z_CUT_MIN && zNorm <= config.Z_CUT_MAX;
+        }
+        
+        // Отрисовка
+        function draw() {
+            if (!isRendering) {
+                // Автоповорот
+                rotX += config.ROTATE_X_SPEED * 0.01;
+                rotY += config.ROTATE_Y_SPEED * 0.01;
+                rotZ += config.ROTATE_Z_SPEED * 0.01;
+            }
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Фон
+            if (config.RENDER_BACKGROUND) {
+                ctx.fillStyle = config.BG_COLOR;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Проекция вершин куба
+            const projectedVertices = cubeVertices.map(v => {
+                const scaled = {
+                    x: v.x * config.SPACE_SIZE/2,
+                    y: v.y * config.SPACE_SIZE/2,
+                    z: v.z * config.SPACE_SIZE/2
+                };
+                return project(scaled);
+            });
+            
+            // Рисуем рёбра куба
+            if (config.RENDER_EDGES) {
+                ctx.strokeStyle = config.EDGE_COLOR;
+                ctx.lineWidth = config.EDGE_WIDTH;
+                cubeEdges.forEach(edge => {
+                    const [i1, i2] = edge;
+                    const v1 = projectedVertices[i1];
+                    const v2 = projectedVertices[i2];
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(v1.x, v1.y);
+                    ctx.lineTo(v2.x, v2.y);
+                    ctx.stroke();
+                });
+            }
+            
+            // Фильтрация и проекция точек
+            projectedPoints = points
+                .filter(p => isPointVisible(p))
+                .map(project)
+                .sort((a, b) => b.z - a.z);
+            
+            // Рисуем точки
+            projectedPoints.forEach(p => {
+                ctx.fillStyle = getColor(p.original);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, config.POINT_SIZE, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            requestAnimationFrame(draw);
+        }
+        
+        // Реакция на изменение размера
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Запуск
+        init();
+        draw();
+    </script>
+</body>
+</html>

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<link rel="icon" href="images/RandText.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="images/RandText.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рандомайзер буков</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --accent-color: #fd79a8;
+            --dark-color: #2d3436;
+            --light-color: #f5f6fa;
+            --success-color: #00b894;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: var(--dark-color);
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+        
+        .input-section {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        .controls {
+            margin-bottom: 25px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #dfe6e9;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            background: var(--accent-color);
+        }
+        
+        .chance-value {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button i {
+            margin-right: 8px;
+        }
+        
+        .result-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .result-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .copy-btn {
+            background-color: var(--accent-color);
+            padding: 8px 12px;
+            font-size: 14px;
+            min-width: auto;
+        }
+        
+        .copy-btn:hover {
+            background-color: #e84393;
+        }
+        
+        .result {
+            flex: 1;
+            background-color: #f8f9fa;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 16px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #636e72;
+            font-size: 14px;
+        }
+        
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animated {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            textarea {
+                height: 100px;
+            }
+            
+            button {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+        
+        /* Эффект для копирования */
+        .copied {
+            background-color: var(--success-color) !important;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Текстовый рандомайзер</h1>
+            <p class="subtitle">Преобразуйте текст, заменяя символы на их стилизованные аналоги</p>
+        </header>
+        
+        <div class="input-section">
+            <label for="inputText">Исходный текст:</label>
+            <textarea id="inputText" placeholder="Введите текст здесь..."></textarea>
+        </div>
+        
+        <div class="controls">
+            <div class="slider-container">
+                <div class="slider-labels">
+                    <span>Шанс замены символов:</span>
+                    <span class="chance-value" id="chanceValue">0.5</span>
+                </div>
+                <input type="range" id="chance" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <div class="buttons">
+                <button id="randomizeBtn">
+                    <i class="fas fa-random"></i> Рандомизировать
+                </button>
+                <button id="resetBtn">
+                    <i class="fas fa-redo"></i> Сбросить
+                </button>
+            </div>
+        </div>
+        
+        <div class="result-section">
+            <div class="result-label">
+                <label>Результат:</label>
+                <button class="copy-btn" id="copyBtn">
+                    <i class="far fa-copy"></i> Копировать
+                </button>
+            </div>
+            <div class="result" id="result"></div>
+        </div>
+        
+        <footer>
+            <p>Используйте ползунок для настройки интенсивности замены символов</p>
+        </footer>
+    </div>
+
+    <script>
+        const replacements = {
+            'а': ['а', 'А', 'α', '@', 'ᴀ'],
+            'б': ['б', 'Б', '6', 'ϐ'],
+            'в': ['в', 'В', 'ß', 'B', 'ⱱ'],
+            'г': ['г', 'Г', 'r', 'Γ', 'ℾ'],
+            'д': ['д', 'Д', 'D', 'Δ', '∂'],
+            'е': ['е', 'Е', '3', '€', '℮', 'é', 'è', 'ê', '℮', 'ɇ'],
+            'ё': ['ё', 'Ё', 'ё̈', 'é', 'è', 'ê', '℮', 'ɇ'],
+            'ж': ['ж', 'Ж', 'Ӝ', 'Ж̃', 'ӝ'],
+            'з': ['з', 'З', '3', 'ℨ', 'ƺ'],
+            'и': ['и', 'И', 'u', 'ü', 'ʊ', 'µ', 'ⱴ'],
+            'й': ['й', 'Й', 'ј', 'ʝ'],
+            'к': ['к', 'К', 'k', 'қ', 'Ⱪ'],
+            'л': ['л', 'Л', 'Λ', 'ʌ'],
+            'м': ['м', 'М', 'm', 'ϻ'],
+            'н': ['н', 'Н', 'H', 'н̃', 'Ⱶ'],
+            'о': ['о', 'О', 'o', '0', 'ø', '⍥'],
+            'п': ['п', 'П', 'π'],
+            'р': ['р', 'Р', 'p', '₽', 'Ᵽ'],
+            'с': ['с', 'С', 'c', 'C', '¢'],
+            'т': ['т', 'Т', 't', 'τ'],
+            'у': ['у', 'У', 'Y', 'ү', 'ɤ'],
+            'ф': ['ф', 'Ф', 'φ'],
+            'х': ['х', 'Х', 'x', 'χ', '⨯'],
+            'ц': ['ц', 'Ц'],
+            'ч': ['ч', 'Ч', '4', 'ч̃'],
+            'ш': ['ш', 'Ш', 'щ̃','ɯ'],
+            'щ': ['щ', 'Щ', 'щ̈'],
+            'ъ': ['ъ', 'Ъ', 'ъ̈', 'ƅ'],
+            'ы': ['ы', 'Ы', 'bl', 'ӹ'],
+            'ь': ['ь', 'Ь', 'b', 'ƀ'],
+            'э': ['э', 'Э', 'ӭ', 'ɛ'],
+            'ю': ['ю', 'Ю', 'ю̈'],
+            'я': ['я', 'Я', 'я̃'],
+            'a': ['a', 'A', '@', 'ª', 'Ɑ'],
+            'b': ['b', 'B', 'β', 'ƀ'],
+            'c': ['c', 'C', '©', '¢', 'Ɐ'],
+            'd': ['d', 'D', '∂', 'Ð'],
+            'e': ['e', 'E', '3', 'é', 'è', 'ê', '℮', 'ɇ'],
+            'f': ['f', 'F', 'ƒ', 'ʄ'],
+            'g': ['g', 'G', '9', 'ℊ', 'ɠ'],
+            'h': ['h', 'H', 'Ⱨ'],
+            'i': ['i', 'I', '!', 'í', 'ï', '|', 'ɨ'],
+            'j': ['j', 'J', 'ĵ', 'Ɉ'],
+            'k': ['k', 'K', 'κ', 'қ', 'Ⱪ'],
+            'l': ['l', 'L', '|', '₤', 'ʟ'],
+            'm': ['m', 'M', 'м', '₥', 'ϻ'],
+            'n': ['n', 'N', 'ñ', 'ŋ', '∩', 'Ɫ'],
+            'o': ['o', 'O', '0', 'ø', '°', '¤', 'ɵ'],
+            'p': ['p', 'P', 'р', '¶', 'Ᵽ'],
+            'q': ['q', 'Q', 'ℚ', 'ʠ'],
+            'r': ['r', 'R', 'Я', 'я', '®', 'Ɍ'],
+            's': ['s', 'S', '$', '§', 'š', 'ʂ'],
+            't': ['t', 'T', 'т', 'τ', 'ⱦ'],
+            'u': ['u', 'U', 'и', 'И', 'ü', 'ʊ', 'µ', 'ⱴ'],
+            'v': ['v', 'V', '√', 'ⱽ'],
+            'w': ['w', 'W', 'ш', 'Ⱳ'],
+            'x': ['x', 'X', '×', '✕', '⨯'],
+            'y': ['y', 'Y', 'У', '¥', 'ʎ'],
+            'z': ['z', 'Z', 'ℤ', 'Ƶ'],
+            '>': ['➤', '→', '⇛'],
+            '<': ['←', '⇐', '⇚'],
+            '-': ['−', '—', '≈', '‒', '⁻'],
+            '=': ['≠', '≡', '≈', '⁼'],
+            '?': ['¿', '‽', '❓', '⸮'],
+            '!': ['¡', '❗', '⚠'],
+            '*': ['✱', '★', '✪', '⁎'],
+            '+': ['✚', '✛', '➕', '∔'],
+            'А': ['а', 'А', 'α', '@', 'ᴀ'],
+            'Б': ['б', 'Б', '6', 'ϐ'],
+            'В': ['в', 'В', 'ß', 'B', 'ⱱ'],
+            'Г': ['г', 'Г', 'r', 'Γ', 'ℾ'],
+            'Д': ['д', 'Д', 'D', 'Δ', '∂'],
+            'Е': ['е', 'Е', '3', '€', '℮', 'é', 'è', 'ê', '℮', 'ɇ'],
+            'Ё': ['ё', 'Ё', 'ё̈', 'é', 'è', 'ê', '℮', 'ɇ'],
+            'Ж': ['ж', 'Ж', 'Ӝ', 'Ж̃', 'ӝ'],
+            'З': ['з', 'З', '3', 'ℨ', 'ƺ'],
+            'И': ['и', 'И', 'u', 'ü', 'ʊ', 'µ', 'ⱴ'],
+            'Й': ['й', 'Й', 'ј', 'ʝ'],
+            'К': ['к', 'К', 'k', 'қ', 'Ⱪ'],
+            'Л': ['л', 'Л', 'Λ', 'ʌ'],
+            'М': ['м', 'М', 'm', 'ϻ'],
+            'Н': ['н', 'Н', 'H', 'н̃', 'Ⱶ'],
+            'О': ['о', 'О', 'o', '0', 'ø', '⍥'],
+            'П': ['п', 'П', 'π'],
+            'Р': ['р', 'Р', 'p', '₽', 'Ᵽ'],
+            'С': ['с', 'С', 'c', 'C', '¢'],
+            'Т': ['т', 'Т', 't', 'τ'],
+            'У': ['у', 'У', 'Y', 'ү', 'ɤ'],
+            'Ф': ['ф', 'Ф', 'φ'],
+            'Х': ['х', 'Х', 'x', 'χ', '⨯'],
+            'Ц': ['ц', 'Ц'],
+            'Ч': ['ч', 'Ч', '4', 'ч̃'],
+            'Ш': ['ш', 'Ш', 'щ̃','ɯ'],
+            'Щ': ['щ', 'Щ', 'щ̈'],
+            'Ъ': ['ъ', 'Ъ', 'ъ̈', 'ƅ'],
+            'Ы': ['ы', 'Ы', 'bl', 'ӹ'],
+            'Ь': ['ь', 'Ь', 'b', 'ƀ'],
+            'Э': ['э', 'Э', 'ӭ', 'ɛ'],
+            'Ю': ['ю', 'Ю', 'ю̈'],
+            'Я': ['я', 'Я', 'я̃'],
+            'A': ['a', 'A', '@', 'ª', 'Ɑ'],
+            'B': ['b', 'B', 'β', 'ƀ'],
+            'C': ['c', 'C', '©', '¢', 'Ɐ'],
+            'D': ['d', 'D', '∂', 'Ð'],
+            'E': ['e', 'E', '3', 'é', 'è', 'ê', '℮', 'ɇ'],
+            'F': ['f', 'F', 'ƒ', 'ʄ'],
+            'G': ['g', 'G', '9', 'ℊ', 'ɠ'],
+            'H': ['h', 'H', 'Ⱨ'],
+            'I': ['i', 'I', '!', 'í', 'ï', '|', 'ɨ'],
+            'J': ['j', 'J', 'ĵ', 'Ɉ'],
+            'K': ['k', 'K', 'κ', 'қ', 'Ⱪ'],
+            'L': ['l', 'L', '|', '₤', 'ʟ'],
+            'M': ['m', 'M', 'м', '₥', 'ϻ'],
+            'N': ['n', 'N', 'ñ', 'ŋ', '∩', 'Ɫ'],
+            'O': ['o', 'O', '0', 'ø', '°', '¤', 'ɵ'],
+            'P': ['p', 'P', 'р', '¶', 'Ᵽ'],
+            'Q': ['q', 'Q', 'ℚ', 'ʠ'],
+            'R': ['r', 'R', 'Я', 'я', '®', 'Ɍ'],
+            'S': ['s', 'S', '$', '§', 'š', 'ʂ'],
+            'T': ['t', 'T', 'т', 'τ', 'ⱦ'],
+            'U': ['u', 'U', 'и', 'И', 'ü', 'ʊ', 'µ', 'ⱴ'],
+            'V': ['v', 'V', '√', 'ⱽ'],
+            'W': ['w', 'W', 'ш', 'Ⱳ'],
+            'X': ['x', 'X', '×', '✕', '⨯'],
+            'Y': ['y', 'Y', 'У', '¥', 'ʎ'],
+            'Z': ['z', 'Z', 'ℤ', 'Ƶ']
+        };
+
+        function randomizeText(text, chance) {
+            let result = [];
+            for (let char of text) {
+                if (replacements[char] && Math.random() < chance) {
+                    const options = replacements[char];
+                    result.push(options[Math.floor(Math.random() * options.length)]);
+                } else {
+                    result.push(char);
+                }
+            }
+            return result.join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputText = document.getElementById('inputText');
+            const chanceSlider = document.getElementById('chance');
+            const chanceValue = document.getElementById('chanceValue');
+            const randomizeBtn = document.getElementById('randomizeBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const result = document.getElementById('result');
+
+            // Обновление значения шанса при перемещении ползунка
+            chanceSlider.addEventListener('input', function() {
+                chanceValue.textContent = this.value;
+            });
+
+            // Рандомизация текста
+            randomizeBtn.addEventListener('click', function() {
+                const text = inputText.value;
+                const chance = parseFloat(chanceSlider.value);
+                
+                if (text) {
+                    const randomizedText = randomizeText(text, chance);
+                    result.textContent = randomizedText;
+                    result.classList.add('animated');
+                    
+                    // Удаляем класс анимации после завершения
+                    setTimeout(() => {
+                        result.classList.remove('animated');
+                    }, 500);
+                } else {
+                    result.textContent = 'Пожалуйста, введите текст для рандомизации';
+                }
+            });
+
+            // Сброс формы
+            resetBtn.addEventListener('click', function() {
+                inputText.value = '';
+                chanceSlider.value = 0.5;
+                chanceValue.textContent = '0.5';
+                result.textContent = '';
+            });
+
+            // Копирование результата
+            copyBtn.addEventListener('click', function() {
+                if (result.textContent) {
+                    navigator.clipboard.writeText(result.textContent)
+                        .then(() => {
+                            copyBtn.classList.add('copied');
+                            copyBtn.innerHTML = '<i class="fas fa-check"></i> Скопировано!';
+                            
+                            setTimeout(() => {
+                                copyBtn.classList.remove('copied');
+                                copyBtn.innerHTML = '<i class="far fa-copy"></i> Копировать';
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error('Ошибка копирования: ', err);
+                        });
+                }
+            });
+
+            // Автоматическое изменение размера текстового поля при вводе
+            inputText.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        });
+    </script>
+</body>
+</html>

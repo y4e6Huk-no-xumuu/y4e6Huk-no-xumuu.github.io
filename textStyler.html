@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="icon" href="images/RandText.ico" type="image/x-icon">
+<link rel="shortcut icon" href="images/RandText.ico" type="image/x-icon">
+<title>Стилизатор текста</title>
+<style>
+  :root{--bg:#0f1115;--card:#111216;--muted:#9aa0a6;--accent:#4f9dff;--glass:rgba(255,255,255,0.03)}
+  body{font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:linear-gradient(180deg,#060607 0%, #0b0c0f 100%); color:#e6eef6; padding:24px}
+  h1{font-size:18px;margin:0 0 12px}
+  .grid{display:grid;gap:12px;grid-template-columns:1fr;max-width:1100px;margin:0 auto}
+  .row{background:var(--card);padding:12px;border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,0.6)}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  textarea{width:100%;min-height:64px;background:var(--glass);color:inherit;border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:6px;resize:vertical;font-size:15px}
+  .small{font-size:12px;color:var(--muted);margin-top:6px}
+  .cols{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .footer{margin-top:12px;color:var(--muted);font-size:13px}
+  .hint{color:var(--muted);font-size:12px;margin-top:6px}
+  button{background:var(--accent);border:none;padding:8px 10px;border-radius:6px;color:#0a0b0d;cursor:pointer}
+  .controls-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .chance-panel{margin-top:8px;padding:10px;background:rgba(255,255,255,0.02);border-radius:6px;display:none}
+  input[type="range"]{width:220px}
+  .small-muted{font-size:12px;color:var(--muted)}
+  @media(max-width:900px){.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <h1>Стилизатор текста</h1>
+  <div class="grid">
+    <div class="row cols">
+      <div>
+        <label for="f1">1. Оригинал (Cyr)</label>
+        <textarea id="f1" placeholder="Съешь ещё этих мягких французских булок, да выпей чаю."></textarea>
+        <div class="small">Оставьте как есть — это базовый текст.</div>
+      </div>
+
+      <div>
+        <label for="f2">2. Звуковая транслитерация</label>
+        <textarea id="f2" placeholder="Sesh eschyo etikh myagkikh frantsuzskikh bulok, da vypey chayu."></textarea>
+      </div>
+
+      <div>
+        <label for="f3">3. Русский текст латиницей</label>
+        <textarea id="f3" placeholder="Cbewb ewe eTux MRrkux fpaHuy3ckux 6yJlok, ga BbIneu 4aIO."></textarea>
+      </div>
+
+      <div>
+        <label for="f4">4. Замена раскладки</label>
+        <textarea id="f4" placeholder="C]tim tot 'nb[ vzurb[ ahfywepcrb[ ,ekjr? lf dsgtq xf./"></textarea>
+      </div>
+
+      <div>
+        <label for="f5">5. Инверсия регистра</label>
+        <textarea id="f5" placeholder="сЪЕШЬ ЕЩЁ ЭТИХ МЯГКИХ ФРАНЦУЗСКИХ БУЛОК, ДА ВЫПЕЙ ЧАЮ."></textarea>
+      </div>
+
+      <div>
+        <label for="f6">6. Рандомизация символов</label>
+        <textarea id="f6" placeholder="Съ℮щ̃ƀ ℮щ̈ɇ ɛtИх ϻяГⱩµх φpαⱵцУзсқµx ϐУЛОК, ΔА ⱱblπ℮ј ч@ю."></textarea>
+
+        <!-- Новые элементы управления для поля 6 -->
+        <div class="controls-row">
+          <button id="toggleChance">Настроить шанс</button>
+          <button id="regenBtn">Обновить</button>
+          <div id="chanceLabel" class="small-muted">Шанс: <span id="chancePercent">60</span>%</div>
+        </div>
+
+        <div id="chancePanel" class="chance-panel" aria-hidden="true">
+          <div class="small-muted">Шанс замены для каждого символа (0% — нет замен, 100% — заменяем все возможные символы):</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+            <input id="chanceRange" type="range" min="0" max="100" value="60"/>
+            <input id="chanceNumber" type="number" min="0" max="100" value="60" style="width:64px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.05);background:transparent;color:inherit"/>
+          </div>
+          <div class="small-muted" style="margin-top:8px">Нажмите <strong>Обновить</strong>, чтобы применить новый шанс к текущему тексту в поле 1 (или к тексту в поле 6 при редактировании).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="hint">Вводите текст в любую из полей — остальные обновятся. Обратные преобразования делаются автоматически по возможности (best effort).</div>
+      <div style="margin-top:8px">
+        <button id="copyAll">Копировать все как JSON</button>
+        <button id="clear">Очистить</button>
+      </div>
+  </div>
+
+<script>
+/* -------------------------
+   Ваши таблицы и существующий код (с минимальными изменениями)
+   Я добавил поддержку параметра chance в randomizeSymbols, контролы и привязки.
+-------------------------*/
+
+/* map2 (как было) */
+const map2 = {
+  'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z',
+  'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
+  'с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'sch',
+  'ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
+  'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh','З':'Z',
+  'И':'I','Й':'Y','К':'K','Л':'L','М':'M','Н':'N','О':'O','П':'P','Р':'R',
+  'С':'S','Т':'T','У':'U','Ф':'F','Х':'Kh','Ц':'Ts','Ч':'Ch','Ш':'Sh','Щ':'Sch',
+  'Ъ':'','Ы':'Y','Ь':'','Э':'E','Ю':'Yu','Я':'Ya'
+};
+const map2_reverse_multi = {
+  'sch':'щ','Sch':'Щ','Sh':'Ш','sh':'ш','Ch':'Ч','ch':'ч','Kh':'Х','kh':'х','Yo':'Ё','yo':'ё','Zh':'Ж','zh':'ж','Ts':'Ц','ts':'ц','Yu':'Ю','yu':'ю','Ya':'Я','ya':'я'
+};
+const map2_reverse_single = {
+  'a':'а','A':'А','b':'б','B':'Б','c':'ц','C':'Ц','d':'д','D':'Д','e':'е','E':'Е','f':'ф','F':'Ф',
+  'g':'г','G':'Г','h':'х','H':'Х','i':'и','I':'И','j':'ж','J':'Ж','k':'к','K':'К','l':'л','L':'Л',
+  'm':'м','M':'М','n':'н','N':'Н','o':'о','O':'О','p':'п','P':'П','q':'к','Q':'К','r':'р','R':'Р',
+  's':'с','S':'С','t':'т','T':'Т','u':'у','U':'У','v':'в','V':'В','w':'в','W':'В','x':'кс','X':'Кс',
+  'y':'й','Y':'Й','z':'з','Z':'З'
+};
+
+/* mapLatin пустой, используем common внутри cyrToLatinVisual */
+const mapLatin = { };
+
+/* randMap — ваша таблица (оставил как есть) */
+const randMap = {
+  'а': ['а', 'А', 'α', '@', 'ᴀ'],
+  'б': ['б', 'Б', '6', 'ϐ'],
+  'в': ['в', 'В', 'ß', 'B', 'ⱱ'],
+  'г': ['г', 'Г', 'r', 'Γ', 'ℾ'],
+  'д': ['д', 'Д', 'D', 'Δ', '∂'],
+  'е': ['е', 'Е', '3', '€', '℮', 'é', 'è', 'ê', 'ɇ'],
+  'ё': ['ё', 'Ё', 'ё̈', 'é', 'è', 'ê', 'ɇ'],
+  'ж': ['ж', 'Ж', 'Ӝ', 'Ж̃', 'ӝ'],
+  'з': ['з', 'З', '3', 'ℨ', 'ƺ'],
+  'и': ['и', 'И', 'u', 'ü', 'ʊ', 'µ', 'ⱴ'],
+  'й': ['й', 'Й', 'ј', 'ʝ'],
+  'к': ['к', 'К', 'k', 'қ', 'Ⱪ'],
+  'л': ['л', 'Л', 'Λ', 'ʌ'],
+  'м': ['м', 'М', 'm', 'ϻ'],
+  'н': ['н', 'Н', 'H', 'н̃', 'Ⱶ'],
+  'о': ['о', 'О', 'o', '0', 'ø', '⍥'],
+  'п': ['п', 'П', 'π'],
+  'р': ['р', 'Р', 'p', '₽', 'Ᵽ'],
+  'с': ['с', 'С', 'c', 'C', '¢'],
+  'т': ['т', 'Т', 't', 'τ'],
+  'у': ['у', 'У', 'Y', 'ү', 'ɤ'],
+  'ф': ['ф', 'Ф', 'φ'],
+  'х': ['х', 'Х', 'x', 'χ', '⨯'],
+  'ц': ['ц', 'Ц'],
+  'ч': ['ч', 'Ч', '4', 'ч̃'],
+  'ш': ['ш', 'Ш', 'щ̃','ɯ'],
+  'щ': ['щ', 'Щ', 'щ̈'],
+  'ъ': ['ъ', 'Ъ', 'ъ̈', 'ƅ'],
+  'ы': ['ы', 'Ы', 'bl', 'ӹ'],
+  'ь': ['ь', 'Ь', 'b', 'ƀ'],
+  'э': ['э', 'Э', 'ӭ', 'ɛ'],
+  'ю': ['ю', 'Ю', 'ю̈'],
+  'я': ['я', 'Я', 'я̃'],
+  'a': ['a', 'A', '@', 'ª', 'Ɑ'],
+  'b': ['b', 'B', 'β', 'ƀ'],
+  'c': ['c', 'C', '©', '¢', 'Ɐ'],
+  'd': ['d', 'D', '∂', 'Ð'],
+  'e': ['e', 'E', '3', 'é', 'è', 'ê', 'ɇ'],
+  'f': ['f', 'F', 'ƒ', 'ʄ'],
+  'g': ['g', 'G', '9', 'ℊ', 'ɠ'],
+  'h': ['h', 'H', 'Ⱨ'],
+  'i': ['i', 'I', '!', 'í', 'ï', '|', 'ɨ'],
+  'j': ['j', 'J', 'ĵ', 'Ɉ'],
+  'k': ['k', 'K', 'κ', 'қ', 'Ⱪ'],
+  'l': ['l', 'L', '|', '₤', 'ʟ'],
+  'm': ['m', 'M', 'м', '₥', 'ϻ'],
+  'n': ['n', 'N', 'ñ', 'ŋ', '∩', 'Ɫ'],
+  'o': ['o', 'O', '0', 'ø', '°', '¤', 'ɵ'],
+  'p': ['p', 'P', 'р', '¶', 'Ᵽ'],
+  'q': ['q', 'Q', 'ℚ', 'ʠ'],
+  'r': ['r', 'R', 'Я', 'я', '®', 'Ɍ'],
+  's': ['s', 'S', '$', '§', 'š', 'ʂ'],
+  't': ['t', 'T', 'т', 'τ', 'ⱦ'],
+  'u': ['u', 'U', 'и', 'И', 'ü', 'ʊ', 'µ', 'ⱴ'],
+  'v': ['v', 'V', '√', 'ⱽ'],
+  'w': ['w', 'W', 'ш', 'Ⱳ'],
+  'x': ['x', 'X', '×', '✕', '⨯'],
+  'y': ['y', 'Y', 'У', '¥', 'ʎ'],
+  'z': ['z', 'Z', 'ℤ', 'Ƶ'],
+  '>': ['➤', '→', '⇛'],
+  '<': ['←', '⇐', '⇚'],
+  '-': ['−', '—', '≈', '‒', '⁻'],
+  '=': ['≠', '≡', '≈', '⁼'],
+  '?': ['¿', '‽', '❓', '⸮'],
+  '!': ['¡', '❗', '⚠'],
+  '*': ['✱', '★', '✪', '⁎'],
+  '+': ['✚', '✛', '➕', '∔'],
+  'А': ['а', 'А', 'α', '@', 'ᴀ'],
+  'Б': ['б', 'Б', '6', 'ϐ'],
+  'В': ['в', 'В', 'ß', 'B', 'ⱱ'],
+  'Г': ['г', 'Г', 'r', 'Γ', 'ℾ'],
+  'Д': ['д', 'Д', 'D', 'Δ', '∂'],
+  'Е': ['е', 'Е', '3', '€', '℮', 'é', 'è', 'ê', 'ɇ'],
+  'Ё': ['ё', 'Ё', 'ё̈', 'é', 'è', 'ê', 'ɇ'],
+  'Ж': ['ж', 'Ж', 'Ӝ', 'Ж̃', 'ӝ'],
+  'З': ['з', 'З', '3', 'ℨ', 'ƺ'],
+  'И': ['и', 'И', 'u', 'ü', 'ʊ', 'µ', 'ⱴ'],
+  'Й': ['й', 'Й', 'ј', 'ʝ'],
+  'К': ['к', 'К', 'k', 'қ', 'Ⱪ'],
+  'Л': ['л', 'Л', 'Λ', 'ʌ'],
+  'М': ['м', 'М', 'm', 'ϻ'],
+  'Н': ['н', 'Н', 'H', 'н̃', 'Ⱶ'],
+  'О': ['о', 'О', 'o', '0', 'ø', '⍥'],
+  'П': ['п', 'П', 'π'],
+  'Р': ['р', 'Р', 'p', '₽', 'Ᵽ'],
+  'С': ['с', 'С', 'c', 'C', '¢'],
+  'Т': ['т', 'Т', 't', 'τ'],
+  'У': ['у', 'У', 'Y', 'ү', 'ɤ'],
+  'Ф': ['ф', 'Ф', 'φ'],
+  'Х': ['х', 'Х', 'x', 'χ', '⨯'],
+  'Ц': ['ц', 'Ц'],
+  'Ч': ['ч', 'Ч', '4', 'ч̃'],
+  'Ш': ['ш', 'Ш', 'щ̃','ɯ'],
+  'Щ': ['щ', 'Щ', 'щ̈'],
+  'Ъ': ['ъ', 'Ъ', 'ъ̈', 'ƅ'],
+  'Ы': ['ы', 'Ы', 'bl', 'ӹ'],
+  'Ь': ['ь', 'Ь', 'b', 'ƀ'],
+  'Э': ['э', 'Э', 'ӭ', 'ɛ'],
+  'Ю': ['ю', 'Ю', 'ю̈'],
+  'Я': ['я', 'Я', 'я̃'],
+  'A': ['a', 'A', '@', 'ª', 'Ɑ'],
+  'B': ['b', 'B', 'β', 'ƀ'],
+  'C': ['c', 'C', '©', '¢', 'Ɐ'],
+  'D': ['d', 'D', '∂', 'Ð'],
+  'E': ['e', 'E', '3', 'é', 'è', 'ê', 'ɇ'],
+  'F': ['f', 'F', 'ƒ', 'ʄ'],
+  'G': ['g', 'G', '9', 'ℊ', 'ɠ'],
+  'H': ['h', 'H', 'Ⱨ'],
+  'I': ['i', 'I', '!', 'í', 'ï', '|', 'ɨ'],
+  'J': ['j', 'J', 'ĵ', 'Ɉ'],
+  'K': ['k', 'K', 'κ', 'қ', 'Ⱪ'],
+  'L': ['l', 'L', '|', '₤', 'ʟ'],
+  'M': ['m', 'M', 'м', '₥', 'ϻ'],
+  'N': ['n', 'N', 'ñ', 'ŋ', '∩', 'Ɫ'],
+  'O': ['o', 'O', '0', 'ø', '°', '¤', 'ɵ'],
+  'P': ['p', 'P', 'р', '¶', 'Ᵽ'],
+  'Q': ['q', 'Q', 'ℚ', 'ʠ'],
+  'R': ['r', 'R', 'Я', 'я', '®', 'Ɍ'],
+  'S': ['s', 'S', '$', '§', 'š', 'ʂ'],
+  'T': ['t', 'T', 'т', 'τ', 'ⱦ'],
+  'U': ['u', 'U', 'и', 'И', 'ü', 'ʊ', 'µ', 'ⱴ'],
+  'V': ['v', 'V', '√', 'ⱽ'],
+  'W': ['w', 'W', 'ш', 'Ⱳ'],
+  'X': ['x', 'X', '×', '✕', '⨯'],
+  'Y': ['y', 'Y', 'У', '¥', 'ʎ'],
+  'Z': ['z', 'Z', 'ℤ', 'Ƶ']
+};
+
+/* раскладка (RU <-> EN) */
+const layoutRUtoEN = {
+  'й':'q','ц':'w','у':'e','к':'r','е':'t','н':'y','г':'u','ш':'i','щ':'o','з':'p','х':'[','ъ':']',
+  'ф':'a','ы':'s','в':'d','а':'f','п':'g','р':'h','о':'j','л':'k','д':'l','ж':';','э':'\'',
+  'я':'z','ч':'x','с':'c','м':'v','и':'b','т':'n','ь':'m','б':',','ю':'.',
+  'Й':'Q','Ц':'W','У':'E','К':'R','Е':'T','Н':'Y','Г':'U','Ш':'I','Щ':'O','З':'P','Х':'{','Ъ':'}',
+  'Ф':'A','Ы':'S','В':'D','А':'F','П':'G','Р':'H','О':'J','Л':'K','Д':'L','Ж':':','Э':'"',
+  'Я':'Z','Ч':'X','С':'C','М':'V','И':'B','Т':'N','Ь':'M','Б':'<','Ю':'>','ё':'`','Ё':'~'
+};
+const layoutENtoRU = Object.fromEntries(Object.entries(layoutRUtoEN).map(([k,v])=>[v,k]));
+
+/* -------------------------
+   Утилиты преобразований
+-------------------------*/
+
+function invertCase(s){
+  return s.split('').map(ch=>{
+    if(ch === ch.toUpperCase()) return ch.toLowerCase();
+    return ch.toUpperCase();
+  }).join('');
+}
+
+function cyrToSound(s){
+  return s.split('').map(ch=>{
+    return map2[ch] !== undefined ? map2[ch] : ch;
+  }).join('');
+}
+
+function soundToCyr(s){
+  let out = '';
+  for(let i=0;i<s.length;){
+    let matched=false;
+    for(let L=4;L>0;L--){
+      let chunk = s.substr(i,L);
+      if(map2_reverse_multi[chunk]){
+        out += map2_reverse_multi[chunk];
+        i += L;
+        matched=true;
+        break;
+      }
+    }
+    if(matched) continue;
+    let c = s[i];
+    if(map2_reverse_single[c]) out += map2_reverse_single[c];
+    else out += c;
+    i++;
+  }
+  return out;
+}
+
+/* common — ваша таблица (вшита в функцию cyrToLatinVisual) */
+function cyrToLatinVisual(s){
+  return s.split('').map(ch=>{
+    const common = {
+      'а':'a','б':'6','в':'B','г':'r','д':'T','е':'e','ё':'e','ж':'*','з':'3','и':'u','й':'u',
+      'к':'k','л':'L','м':'M','н':'H','о':'o','п':'n','р':'p','с':'c','т':'T','у':'y','ф':'F',
+      'х':'x','ц':'u','ч':'4','ш':'w','щ':'w','ь':'b','ы':'bl','э':'3','ю':'IO','я':'R','ъ':'b',
+      'А':'A','Б':'6','В':'B','Г':'r','Д':'D','Е':'E','Ё':'E','Ж':'*','З':'3','И':'N','Й':'N',
+      'К':'K','Л':'L','М':'M','Н':'H','О':'O','П':'n','Р':'P','С':'C','Т':'T','У':'y','Ф':'F',
+      'Х':'X','Ц':'U','Ч':'4','Ш':'W','Щ':'W','Ь':'b','Ы':'bI','Э':'3','Ю':'IO','Я':'R','Ъ':'b'
+    };
+    if(common[ch]) return common[ch];
+    return ch;
+  }).join('');
+}
+
+/* latinVisualToCyr (упрощённый best-effort — можно расширить) */
+function latinVisualToCyr(s){
+  const rev = {
+    'a':'а','6':'б','B':'в','r':'г','T':'т','e':'е','*':'ж','3':'з','u':'й','k':'к',
+    'L':'л','M':'м','H':'н','o':'о','n':'п','p':'р','c':'с','y':'у','F':'ф','x':'х',
+    '4':'ч','w':'ш','b':'ь','bl':'ы','IO':'ю','R':'я',
+    'A':'А','D':'Д','E':'Е','N':'Й','K':'К','O':'О','P':'Р','C':'С','X':'Х','U':'Ц',
+    'W':'Ш','bI':'Ы'
+  };
+  let out=''; for(let i=0;i<s.length;){
+    if(s.substr(i,2)==='bl'){ out+='ы'; i+=2; continue;}
+    if(s.substr(i,2)==='IO'){ out+='ю'; i+=2; continue;}
+    if(s.substr(i,2).toLowerCase()==='yo'){ out+='ё'; i+=2; continue;}
+    let ch=s[i];
+    if(rev[ch]) out+=rev[ch]; else {
+      const fallback = {'a':'а','o':'о','c':'с','y':'у','k':'к','m':'м','t':'т','e':'е','p':'р','h':'н','b':'в','x':'х','n':'п','r':'р'};
+      out+= (fallback[ch]||ch);
+    }
+    i++;
+  }
+  return out;
+}
+
+function applyLayoutSwap(s){
+  return s.split('').map(ch=>{
+    if(layoutRUtoEN[ch]) return layoutRUtoEN[ch];
+    if(layoutENtoRU[ch]) return layoutENtoRU[ch];
+    return ch;
+  }).join('');
+}
+
+/* рандомизация с параметром chance (0..1) */
+function randomizeSymbols(s, chance = 0.6){
+  return s.split('').map(ch=>{
+    // c вероятностью (1-chance) — оставляем исходный символ
+    if(Math.random() > chance) return ch;
+    if(randMap[ch]){
+      const arr = randMap[ch];
+      return arr[Math.floor(Math.random()*arr.length)];
+    }
+    if(randMap[ch.toUpperCase()]){
+      const arr = randMap[ch.toUpperCase()];
+      return arr[Math.floor(Math.random()*arr.length)];
+    }
+    return ch;
+  }).join('');
+}
+
+/* дерендомизация — best-effort */
+function derandomizeToCyr(s){
+  const rev = {};
+  for(const k in randMap){
+    randMap[k].forEach(sub=>{
+      rev[sub] = k;
+    });
+  }
+  return s.split('').map(ch=>{
+    if(rev[ch]) return rev[ch];
+    return ch;
+  }).join('');
+}
+
+/* -------------------------
+   Интеграция с UI и новые контролы шанса
+-------------------------*/
+
+const f1 = document.getElementById('f1');
+const f2 = document.getElementById('f2');
+const f3 = document.getElementById('f3');
+const f4 = document.getElementById('f4');
+const f5 = document.getElementById('f5');
+const f6 = document.getElementById('f6');
+
+const toggleChanceBtn = document.getElementById('toggleChance');
+const regenBtn = document.getElementById('regenBtn');
+const chancePanel = document.getElementById('chancePanel');
+const chanceRange = document.getElementById('chanceRange');
+const chanceNumber = document.getElementById('chanceNumber');
+const chancePercent = document.getElementById('chancePercent');
+const chanceLabel = document.getElementById('chanceLabel');
+
+let programmaticUpdate = false;
+// значение шанса (0..1)
+let randomChance = parseInt(chanceRange.value,10)/100;
+
+/* Меняем отображение панели */
+toggleChanceBtn.addEventListener('click', ()=>{
+  const shown = chancePanel.style.display === 'block';
+  chancePanel.style.display = shown ? 'none' : 'block';
+  chancePanel.setAttribute('aria-hidden', shown ? 'true' : 'false');
+});
+
+/* синхронизация ползунка и числа */
+chanceRange.addEventListener('input', ()=>{
+  chanceNumber.value = chanceRange.value;
+  chancePercent.textContent = chanceRange.value;
+  randomChance = parseInt(chanceRange.value,10)/100;
+});
+chanceNumber.addEventListener('input', ()=>{
+  let v = parseInt(chanceNumber.value,10);
+  if(Number.isNaN(v)) v = 0;
+  if(v < 0) v = 0;
+  if(v > 100) v = 100;
+  chanceNumber.value = v;
+  chanceRange.value = v;
+  chancePercent.textContent = v;
+  randomChance = v/100;
+});
+
+/* Кнопка "Обновить" — пересоздаёт рандомизированное поле.
+   Использует текущий текст: если поле 1 не пустое — берём его как источник,
+   иначе берём содержимое поля 6 (позволяет повторную рандомизацию уже рандомизированного текста).
+*/
+regenBtn.addEventListener('click', ()=>{
+  const src = f1.value.trim() !== '' ? f1.value : f6.value;
+  f6.value = randomizeSymbols(src, randomChance);
+});
+
+/* Функция обновления всех полей (используется при вводе) */
+function updateFromSource(fieldId, text){
+  if(programmaticUpdate) return;
+  programmaticUpdate = true;
+  let baseCyr = text;
+
+  try{
+    switch(fieldId){
+      case 'f1':
+        baseCyr = text;
+        break;
+      case 'f2':
+        baseCyr = soundToCyr(text);
+        break;
+      case 'f3':
+        baseCyr = latinVisualToCyr(text);
+        break;
+      case 'f4':
+        baseCyr = applyLayoutSwap(text);
+        break;
+      case 'f5':
+        baseCyr = invertCase(text);
+        break;
+      case 'f6':
+        baseCyr = derandomizeToCyr(text);
+        break;
+    }
+  }catch(e){
+    console.error(e);
+  }
+
+  f1.value = baseCyr;
+  f2.value = cyrToSound(baseCyr);
+  f3.value = cyrToLatinVisual(baseCyr);
+  f4.value = applyLayoutSwap(baseCyr);
+  f5.value = invertCase(baseCyr);
+  // используем текущий randomChance
+  f6.value = randomizeSymbols(baseCyr, randomChance);
+
+  programmaticUpdate = false;
+}
+
+/* привязки событий */
+[f1,f2,f3,f4,f5,f6].forEach(el=>{
+  el.addEventListener('input', ()=> updateFromSource(el.id, el.value));
+});
+
+/* кнопки общего управления */
+document.getElementById('clear').addEventListener('click', ()=>{
+  f1.value=f2.value=f3.value=f4.value=f5.value=f6.value='';
+});
+document.getElementById('copyAll').addEventListener('click', ()=>{
+  const json = {
+    original: f1.value,
+    sound: f2.value,
+    latinVisual: f3.value,
+    layoutSwap: f4.value,
+    invertCase: f5.value,
+    randomized: f6.value
+  };
+  navigator.clipboard.writeText(JSON.stringify(json, null, 2)).then(()=>{
+    alert('Скопировано в буфер обмена (JSON).');
+  }, ()=>alert('Не удалось скопировать.'));
+});
+
+/* инициализация примера */
+const sample = "Съешь ещё этих мягких французских булок, да выпей чаю.";
+updateFromSource('f1', sample);
+</script>
+</body>
+</html>

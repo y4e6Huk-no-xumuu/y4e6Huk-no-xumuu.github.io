@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ʊⱢDEfïⱢèÐ</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="noiseCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('noiseCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    function generateNoise() {
+      const imageData = ctx.createImageData(canvas.width, canvas.height);
+      const buffer = new Uint32Array(imageData.data.buffer);
+
+      for (let i = 0; i < buffer.length; i++) {
+        const gray = Math.random() * 255;
+        buffer[i] = (255 << 24) | (gray << 16) | (gray << 8) | gray;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      requestAnimationFrame(generateNoise);
+    }
+
+    generateNoise();
+  </script>
+</body>
+</html>

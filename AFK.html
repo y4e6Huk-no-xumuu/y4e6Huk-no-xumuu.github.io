@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black text-white">
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+  <link rel="icon" href="images/afk.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="images/afk.ico" type="image/x-icon">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visual Playground</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+    }
+
+    canvas, .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+    }
+
+    .overlay {
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+    window.addEventListener('resize', () => {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    });
+
+    let currentEffect = 0;
+    let animationId;
+    const effects = [];
+
+    // --- EFFECT 1: PARTICLES + LINES ---
+    effects.push({
+      name: 'particles',
+      init() {
+        const particles = Array.from({ length: 100 }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: (Math.random() - 0.5) * 1.5,
+          r: Math.random() * 3 + 2
+        }));
+
+        function draw() {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+          ctx.fillRect(0, 0, w, h);
+
+          for (let i = 0; i < particles.length; i++) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0 || p.x > w) p.vx *= -1;
+            if (p.y < 0 || p.y > h) p.vy *= -1;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            for (let j = i + 1; j < particles.length; j++) {
+              let q = particles[j];
+              let dist = Math.hypot(p.x - q.x, p.y - q.y);
+              if (dist < 100) {
+                ctx.strokeStyle = `rgba(255,255,255,${1 - dist / 100})`;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(q.x, q.y);
+                ctx.stroke();
+              }
+            }
+          }
+          animationId = requestAnimationFrame(draw);
+        }
+        draw();
+      },
+      cleanup() {
+        cancelAnimationFrame(animationId);
+        ctx.clearRect(0, 0, w, h);
+      }
+    });
+
+    // --- EFFECT 2: GRADIENT WAVES ---
+    effects.push({
+      name: 'gradient waves',
+      init() {
+        let t = 0;
+        function draw() {
+          const grd = ctx.createLinearGradient(0, 0, w, h);
+          grd.addColorStop(0, `hsl(${t % 360}, 100%, 50%)`);
+          grd.addColorStop(1, `hsl(${(t + 60) % 360}, 100%, 50%)`);
+          ctx.fillStyle = grd;
+          ctx.fillRect(0, 0, w, h);
+          t += 0.5;
+          animationId = requestAnimationFrame(draw);
+        }
+        draw();
+      },
+      cleanup() {
+        cancelAnimationFrame(animationId);
+      }
+    });
+	// --- EFFECT 2.1 ---
+    effects.push({
+      name: 'pulsing circles',
+      init() {
+	    const rnd = Math.floor(Math.random() * 10) + 1;
+        let t = 0;
+        function draw() {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+          ctx.fillRect(0, 0, w, h);
+          for (let i = 0; i < 500; i++) {
+            const x = w / 2 + Math.sin(t + i) * 200;
+            const y = h / 2 + Math.cos(t + i * 1.5) * 200;
+            const r = 30;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = `hsl(${1}, 100%, 100%)`;
+            ctx.fill();
+          }
+          t += 0.02;
+          animationId = requestAnimationFrame(draw);
+        }
+        draw();
+      },
+      cleanup() {
+        cancelAnimationFrame(animationId);
+      }
+    });
+    // --- EFFECT 3: COSMIC STARFIELD ---
+    effects.push({
+      name: 'cosmos',
+      init() {
+        const stars = Array.from({ length: 300 }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          z: Math.random() * w
+        }));
+
+        function draw() {
+          ctx.fillStyle = 'black';
+          ctx.fillRect(0, 0, w, h);
+
+          for (let s of stars) {
+            s.z -= 2;
+            if (s.z <= 0) s.z = w;
+            const sx = (s.x - w / 2) * (w / s.z) + w / 2;
+            const sy = (s.y - h / 2) * (w / s.z) + h / 2;
+            const radius = w / s.z;
+            ctx.beginPath();
+            ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+          }
+          animationId = requestAnimationFrame(draw);
+        }
+        draw();
+      },
+      cleanup() {
+        cancelAnimationFrame(animationId);
+      }
+    });
+
+    // --- EFFECT 4: PULSING CIRCLES ---
+    effects.push({
+      name: 'pulsing circles',
+      init() {
+	    const rnd = Math.floor(Math.random() * 10) + 1;
+        let t = 0;
+        function draw() {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+          ctx.fillRect(0, 0, w, h);
+          for (let i = 0; i < 20; i++) {
+            const x = w / 2 + Math.sin(t + i) * 500;
+            const y = h / 2 + Math.cos(t + i * 1.5) * 300;
+            const r = 30 + Math.sin(t + i + Math.cos(rnd)) * 10;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = `hsl(${(t * 30 + i * 20) % 360}, 100%, 40%)`;
+            ctx.fill();
+          }
+          t += 0.02;
+          animationId = requestAnimationFrame(draw);
+        }
+        draw();
+      },
+      cleanup() {
+        cancelAnimationFrame(animationId);
+      }
+    });
+	
+
+
+// --- EFFECT 5: DVD BOUNCE ---
+effects.push({
+  name: 'dvd bounce',
+  init() {
+    const logo = {
+      x: Math.random() * (w - 100),
+      y: Math.random() * (h - 50),
+      vx: 3,
+      vy: 2,
+      width: 200,
+      height: 100,
+      colorHue: Math.random() * 360
+    };
+
+    function draw() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(0, 0, w, h);
+
+      // Move logo
+      logo.x += logo.vx;
+      logo.y += logo.vy;
+
+      // Bounce and change color
+      let bounced = false;
+      if (logo.x <= 0 || logo.x + logo.width >= w) {
+        logo.vx *= -1;
+        bounced = true;
+      }
+      if (logo.y <= 0 || logo.y + logo.height >= h) {
+        logo.vy *= -1;
+        bounced = true;
+      }
+      if (bounced) {
+        logo.colorHue = Math.random() * 360;
+      }
+
+      // Draw logo
+      ctx.fillStyle = `hsl(${logo.colorHue}, 100%, 60%)`;
+      ctx.fillRect(logo.x, logo.y, logo.width, logo.height);
+      ctx.fillStyle = 'black';
+      ctx.font = 'bolder 22px Montserrat';
+      ctx.fillText('y46Hk', logo.x + 65, logo.y + 55);
+
+      animationId = requestAnimationFrame(draw);
+    }
+
+    draw();
+  },
+  cleanup() {
+    cancelAnimationFrame(animationId);
+    ctx.clearRect(0, 0, w, h);
+  }
+});
+
+
+    function switchEffect(direction) {
+      effects[currentEffect].cleanup();
+      currentEffect = (currentEffect + direction + effects.length) % effects.length;
+      effects[currentEffect].init();
+    }
+
+    document.addEventListener('click', (e) => {
+      const margin = 100;
+      if (e.clientX < margin) {
+        switchEffect(-1);
+      } else if (e.clientX > window.innerWidth - margin) {
+        switchEffect(1);
+      }
+    });
+
+    effects[currentEffect].init();
+  </script>
+</body>
+</html>

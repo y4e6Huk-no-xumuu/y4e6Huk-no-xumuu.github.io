@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<link rel="icon" href="images/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>y4e6Huk's site</title>
+    <!-- Подключаем файл стилей -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Подключаем иконки (можно использовать Font Awesome или другие) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Шапка сайта с логотипом -->
+    <header class="header">
+        <div class="container">
+		<div class="social-buttons">
+			<a href="https://t.me/OlyhFamily" target="_blank"><img src="images/tg.png" alt="ТГ"></a>
+			<a href="https://www.twitch.tv/y4e6huk_no_xumuu/" target="_blank"><img src="images/twich.png" alt="Твич"></a>
+			<a href="https://discord.gg/xqagZaVvqv" target="_blank"><img src="images/ds.jpg" alt="ДС"></a>
+			<a href="https://www.donationalerts.com/r/y4e6huk_no_xumuu" target="_blank"><img src="images/da.png" alt="Донейшен"></a>
+			<a href="#" target="_blank"><img src="images/trnstrnt.png" alt="Пасхалочко"></a>
+			</div>
+            <div class="logo-container">
+                <!-- Замените logo.png на ваше лого -->
+                <img src="images/logo.png" alt="Логотип" class="logo">
+                <h1>Сайт Учебника</h1>
+            </div>
+            <p class="tagline">Тут крч приколы мои, тыкайтесь</p>
+			<!-- Переключатель темы -->
+            <div class="theme-switcher">
+                <input type="checkbox" id="theme-toggle" class="theme-toggle">
+                <label for="theme-toggle" class="theme-label">
+                    <i class="fas fa-sun"></i>
+                    <i class="fas fa-moon"></i>
+                    <span class="theme-ball"></span>
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основное содержимое -->
+    <main class="main">
+        <div class="container">
+            <h2>Доступные страницы</h2>
+            <p class="description">Выберите страницу, на которую хотите перейти:</p>
+            
+            <!-- Контейнер для кнопок-карточек -->
+            <div class="cards-container">
+                <!-- КАРТОЧКА 1 - ШАБЛОН ДЛЯ КОПИРОВАНИЯ -->
+                <!-- 
+                    Чтобы добавить новую кнопку-карточку:
+                    1. Скопируйте весь блок .card (от <div class="card"> до </div>)
+                    2. Вставьте перед этим комментарием
+                    3. Измените параметры:
+                       - data-link - имя файла, на который ведет кнопка
+                       - img src - путь к изображению
+                       - h3 - название страницы
+                       - p - описание страницы
+                -->
+                <div class="card" data-link="ColorCube.html">
+                    <div class="card-image">
+                        <!-- Замените icon1.png на ваше изображение -->
+                        <img src="images/ColorCube.png" alt="Иконка">
+                    </div>
+                    <div class="card-content">
+                        <h3>Цветной куб</h3>
+                        <p>Дергайте ползуночки и получайте разноцветные точечки</p>
+                    </div>
+                    <div class="card-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- КАРТОЧКА 2 - ЕЩЕ ОДИН ПРИМЕР -->
+                <div class="card" data-link="RGBlab.html">
+                    <div class="card-image">
+                        <img src="images/RGBlab.png" alt="Иконка">
+                    </div>
+                    <div class="card-content">
+                        <h3>Цветные кружочки</h3>
+                        <p>Смешение цветов и анализ RGB и CMYK пространства</p>
+                    </div>
+                    <div class="card-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+				
+				<div class="card" data-link="ConsoleRender.html">
+                    <div class="card-image">
+                        <img src="images/ConsoleRender.png" alt="Иконка">
+                    </div>
+                    <div class="card-content">
+                        <h3>Консольный рендер</h3>
+                        <p>Превращайте ASCII символы в фигуры</p>
+                    </div>
+                    <div class="card-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+				
+				<div class="card" data-link="Shakal.html">
+                    <div class="card-image">
+                        <img src="images/Shakal.jpg" alt="Иконка">
+                    </div>
+                    <div class="card-content">
+                        <h3>Шакализатор изображений</h3>
+                        <p>Превращайте картинки в смесь пикселей</p>
+                    </div>
+                    <div class="card-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+				
+				<div class="card" data-link="cas.html">
+                    <div class="card-image">
+                        <img src="images/cas.jpg" alt="Иконка">
+                    </div>
+                    <div class="card-content">
+                        <h3>КАЗИНО СИМУЛЯТОР</h3>
+						<p>ЭТО ПОСЛЕДНЯЯ СТАВКА, ПОДАЙТЕ НА ДОДЭП, ДА Я ЩА ОТЫГРАЮСЬ</p>
+                    </div>
+                    <div class="card-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+				
+				<div class="card" data-link="textStyler.html">
+                    <div class="card-image">
+                        <img src="images/RandText.gif" alt="Иконка">
+                    </div>
+                    <div class="card-content">
+                        <h3>Стилизатор текста</h3>
+                        <p>Меняет раскладку, регистор, рандомит символы и т.д.</p>
+                    </div>
+                    <div class="card-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+				
+				<div class="card" data-link="audio.html">
+                    <div class="card-image">
+                        <img src="images/audio.png" alt="Иконка">
+                    </div>
+                    <div class="card-content">
+                        <h3>Редактор аудиофайлов</h3>
+                        <p>Можно поставить исполнителя, иконку, альбом и т.д.</p>
+                    </div>
+                    <div class="card-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+				
+				<div class="card" data-link="AFK.html">
+                    <div class="card-image">
+                        <img src="images/AFK.jpg" alt="Иконка">
+                    </div>
+                    <div class="card-content">
+                        <h3>Фон</h3>
+                        <p>Можно поставить на 2 моник</p>
+                    </div>
+                    <div class="card-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+				
+				<div class="card" data-link="test.html">
+                    <div class="card-image">
+                        <img src="images/undefined.jpg" alt="Иконка">
+                    </div>
+                    <div class="card-content">
+                        <h3></h3>
+                        <p></p>
+                    </div>
+                    <div class="card-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+                <!-- Вставьте новые карточки перед этим комментарием -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Подвал сайта -->
+    <footer class="footer">
+        <div class="container">
+            <p>© y4e6Huk's site. Никакие права не защищены.</p>
+        </div>
+    </footer>
+
+    <!-- Подключаем JavaScript -->
+    <script src="scripts.js"></script>
+</body>
+</html>

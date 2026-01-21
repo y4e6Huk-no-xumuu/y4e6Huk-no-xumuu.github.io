@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="images/audio.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="images/audio.ico" type="image/x-icon">
+  <title>Редактор аудио</title>
+  <style>
+    :root{--accent:#1f6feb}
+    body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; padding:16px; background:#f6f7fb; color:#0b1220}
+    .container{max-width:900px;margin:0 auto;background:#fff;border-radius:12px;padding:16px;box-shadow:0 6px 20px rgba(9,20,37,0.08)}
+    h1{font-size:18px;margin:0 0 12px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .col{flex:1 1 220px;min-width:180px}
+    label{display:block;font-size:12px;margin-bottom:6px;color:#334155}
+    input[type=text],input[type=number],select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;background:#fff;font-size:14px}
+    textarea{min-height:80px}
+    .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:var(--accent);color:#fff;text-decoration:none;border:none;font-weight:600}
+    .btn[disabled]{opacity:.5;pointer-events:none}
+    .muted{color:#6b7280;font-size:13px}
+    .drop{border:2px dashed #e6e9ef;border-radius:10px;padding:18px;text-align:center;background:#fbfdff}
+    img.cover{max-width:120px;border-radius:6px;display:block}
+    audio{width:100%;margin-top:8px}
+    footer{margin-top:12px;font-size:13px;color:#6b7280}
+    @media (max-width:560px){.row{flex-direction:column}}
+  </style>
+  <!-- библиотека чтения тегов -->
+  <script src="https://unpkg.com/jsmediatags@3.9.7/dist/jsmediatags.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Редактор метаданных аудио — полностью в браузере</h1>
+    <p class="muted">Загрузите файл MP3 (чтение тегов: jsmediatags). Изменения применяются локально — бэкенд не нужен.</p>
+
+    <div class="row" style="margin-top:12px">
+      <div class="col">
+        <div class="drop" id="drop">Перетащите сюда аудиофайл или <label for="file" class="btn" style="cursor:pointer;display:inline-block;margin-left:8px;">Выбрать файл</label>
+          <input id="file" type="file" accept="audio/*" style="display:none">
+        </div>
+
+        <div style="margin-top:12px">
+          <audio id="player" controls></audio>
+        </div>
+
+        <div style="margin-top:12px">
+          <label class="muted">Сгенерированный файл</label>
+          <div id="downloadWrap"></div>
+        </div>
+      </div>
+
+      <div class="col">
+        <label>Название (Title)</label>
+        <input id="title" type="text" placeholder="Название трека">
+
+        <label style="margin-top:8px">Исполнитель (Artist)</label>
+        <input id="artist" type="text" placeholder="Исполнитель">
+
+        <label style="margin-top:8px">Альбом (Album)</label>
+        <input id="album" type="text" placeholder="Альбом">
+
+        <div class="row" style="margin-top:8px">
+          <div style="flex:1 1 120px">
+            <label>Год</label>
+            <input id="year" type="number" min="0" placeholder="2025">
+          </div>
+          <div style="flex:1 1 120px">
+            <label>Номер трека</label>
+            <input id="track" type="number" min="0" placeholder="1">
+          </div>
+        </div>
+
+        <label style="margin-top:8px">Комментарий</label>
+        <textarea id="comment" placeholder="Комментарий"></textarea>
+      </div>
+
+      <div class="col" style="min-width:160px;max-width:260px">
+        <label>Обложка (Cover)</label>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <div>
+            <img id="coverPreview" class="cover" src="" alt="Нет обложки" style="display:none">
+          </div>
+        </div>
+
+        <div style="margin-top:8px">
+          <input id="coverFile" type="file" accept="image/*">
+        </div>
+
+        <div style="margin-top:12px">
+          <button id="apply" class="btn" disabled>Применить метаданные и скачать</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>Поддерживаемые операции: чтение ID3 (jsmediatags), запись ID3v2 (browser-id3-writer) — запись поддерживается только для MP3.</footer>
+  </div>
+
+<script type="module">
+/* импорт ESM-версии ID3Writer (если CDN не доступен — положите локальную .mjs и поменяйте путь) */
+import { ID3Writer } from 'https://cdn.jsdelivr.net/npm/browser-id3-writer@6.3.1/dist/browser-id3-writer.mjs';
+
+const fileInput = document.getElementById('file');
+const drop = document.getElementById('drop');
+const player = document.getElementById('player');
+const coverFile = document.getElementById('coverFile');
+const coverPreview = document.getElementById('coverPreview');
+const applyBtn = document.getElementById('apply');
+const downloadWrap = document.getElementById('downloadWrap');
+
+let currentFile = null;
+let currentArrayBuffer = null;
+let coverImageArrayBuffer = null;
+
+function resetUI(){
+  document.getElementById('title').value = '';
+  document.getElementById('artist').value = '';
+  document.getElementById('album').value = '';
+  document.getElementById('year').value = '';
+  document.getElementById('track').value = '';
+  document.getElementById('comment').value = '';
+  coverPreview.style.display = 'none';
+  coverPreview.src = '';
+  downloadWrap.innerHTML = '';
+  applyBtn.disabled = true;
+}
+
+// drag & drop visuals
+['dragenter','dragover'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.style.borderColor = 'var(--accent)'; }));
+['dragleave','drop'].forEach(evt => drop.addEventListener(evt, e => { e.preventDefault(); drop.style.borderColor = '#e6e9ef'; }));
+
+drop.addEventListener('drop', e => {
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) handleFile(f);
+});
+
+fileInput.addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(file){
+  resetUI();
+  currentFile = file;
+
+  // show in player
+  const url = URL.createObjectURL(file);
+  player.src = url;
+  player.load();
+
+  // чтение ArrayBuffer
+  const reader = new FileReader();
+  applyBtn.disabled = true;
+  reader.onload = function(){
+    currentArrayBuffer = reader.result;
+    // разрешаем кнопку, но только если формат MP3
+    const mime = (currentFile && currentFile.type || '').toLowerCase();
+    const ext = (currentFile && currentFile.name) ? currentFile.name.split('.').pop().toLowerCase() : '';
+    if (mime === 'audio/mpeg' || ext === 'mp3') {
+      applyBtn.disabled = false;
+    } else {
+      applyBtn.disabled = true;
+      console.warn('Запись поддерживается только для MP3. Текущий файл:', mime || ext);
+    }
+  };
+  reader.onerror = function(e){
+    console.error('FileReader error', e);
+    alert('Ошибка чтения файла. Проверьте файл в консоли.');
+  };
+  reader.readAsArrayBuffer(file);
+
+  // чтение тегов для отображения
+  try{
+    window.jsmediatags.read(file, {
+      onSuccess: tag => {
+        const tags = tag.tags || {};
+        document.getElementById('title').value = tags.title || '';
+        document.getElementById('artist').value = tags.artist || '';
+        document.getElementById('album').value = tags.album || '';
+        document.getElementById('year').value = tags.year || '';
+        document.getElementById('track').value = (tags.track && tags.track.no) ? tags.track.no : (tags.track || '');
+        document.getElementById('comment').value = (tags.comment && tags.comment.text) ? tags.comment.text : (tags.comment || '');
+
+        if(tags.picture){
+          const pic = tags.picture;
+          const base64String = arrayBufferToBase64(pic.data);
+          coverPreview.src = `data:${pic.format};base64,${base64String}`;
+          coverPreview.style.display = 'block';
+          coverImageArrayBuffer = new Uint8Array(pic.data).buffer;
+        }
+      },
+      onError: err => {
+        console.log('jsmediatags error', err);
+      }
+    });
+  }catch(e){ console.warn(e); }
+}
+
+function arrayBufferToBase64(buffer){
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for(let i=0;i<len;i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+coverFile.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    coverPreview.src = r.result;
+    coverPreview.style.display = 'block';
+    const arr = base64ToArrayBuffer(r.result.split(',')[1]);
+    coverImageArrayBuffer = arr;
+  };
+  r.readAsDataURL(f);
+});
+
+function base64ToArrayBuffer(base64){
+  const binary_string = atob(base64);
+  const len = binary_string.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++){
+    bytes[i] = binary_string.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+applyBtn.addEventListener('click', async () => {
+  if(!currentArrayBuffer){ alert('Сначала выберите аудиофайл.'); return; }
+
+  // проверим формат ещё раз
+  const mime = (currentFile && currentFile.type || '').toLowerCase();
+  const ext = (currentFile && currentFile.name) ? currentFile.name.split('.').pop().toLowerCase() : '';
+  if (mime !== 'audio/mpeg' && ext !== 'mp3') {
+    alert('Запись тегов поддерживается только для MP3. Ваш файл: ' + (mime || ext || 'неизвестный'));
+    return;
+  }
+
+  try{
+    const uint8 = new Uint8Array(currentArrayBuffer);
+    const writer = new ID3Writer(uint8);
+
+    const title = document.getElementById('title').value || undefined;
+    const artist = document.getElementById('artist').value || undefined;
+    const album = document.getElementById('album').value || undefined;
+    const year = document.getElementById('year').value || undefined;
+    const track = document.getElementById('track').value || undefined;
+    const comment = document.getElementById('comment').value || undefined;
+
+    if(title) writer.setFrame('TIT2', title);
+    if(artist) writer.setFrame('TPE1', [artist]);
+    if(album) writer.setFrame('TALB', album);
+    if(year) writer.setFrame('TYER', String(year));
+    if(track) writer.setFrame('TRCK', String(track));
+    if(comment) writer.setFrame('COMM', {description: '', text: comment});
+
+    if(coverImageArrayBuffer){
+      const mimeType = coverPreview.src.split(';')[0].split(':')[1] || 'image/jpeg';
+      writer.setFrame('APIC', {
+        type: 3,
+        data: new Uint8Array(coverImageArrayBuffer),
+        description: 'Cover',
+        mimeType: mimeType
+      });
+    }
+
+    writer.addTag();
+    const blob = writer.getBlob();
+    const url = URL.createObjectURL(blob);
+
+    downloadWrap.innerHTML = '';
+    const safeName = (document.getElementById('title').value || currentFile.name || 'modified')
+      .replace(/[^a-zA-Z0-9\.\-_\(\)\s]/g,'');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = safeName + '.mp3';
+    a.className = 'btn';
+    a.textContent = 'Скачать изменённый трек';
+    downloadWrap.appendChild(a);
+
+  }catch(err){
+    console.error('Ошибка записи тегов:', err);
+    alert('Ошибка при записи тегов:\n' + (err && err.message ? err.message : String(err)));
+  }
+});
+</script>
+</body>
+</html>
