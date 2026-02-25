@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<link rel="icon" href="images/Turnament.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="images/Turnament.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 Универсальный турнир: Аудио / Видео / Фото / Текст</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2f 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #e0e0ff;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(18, 18, 30, 0.9);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 30px;
+            box-shadow: 0 30px 60px -15px #00000080, inset 0 1px 2px #ffffff1a;
+            border: 1px solid #2a2a45;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #b4a6ff, #8f9eff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subhead {
+            color: #8a85b8;
+            margin-bottom: 30px;
+            padding-left: 20px;
+            border-left: 4px solid #5d4cbb;
+        }
+
+        /* Переключатель режимов */
+        .mode-switch {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            background: #1e1e36;
+            padding: 8px;
+            border-radius: 60px;
+            border: 1px solid #323252;
+        }
+
+        .mode-btn {
+            flex: 1 1 auto;
+            min-width: 100px;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 50px;
+            background: transparent;
+            color: #a5a1d1;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(145deg, #4a3f9e, #6050c0);
+            color: white;
+            box-shadow: 0 6px 14px #2e2566;
+        }
+
+        .mode-btn:not(.active):hover {
+            background: #2a2a4a;
+            color: #dbd4ff;
+        }
+
+        /* Зона загрузки/ввода */
+        .input-area {
+            background: #1c1c32;
+            border-radius: 36px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #34345a;
+        }
+
+        .drop-zone {
+            border: 2px dashed #4a4a78;
+            border-radius: 32px;
+            padding: 45px 20px;
+            text-align: center;
+            background: #21213b;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .drop-zone.dragover {
+            border-color: #b28aff;
+            background: #2b2b4d;
+            box-shadow: 0 0 25px #6b4fcf;
+        }
+
+        .file-list {
+            background: #16162b;
+            border-radius: 28px;
+            padding: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #37375b;
+            margin: 20px 0;
+        }
+
+        .file-item {
+            display: inline-block;
+            background: #2a2a4e;
+            padding: 8px 18px;
+            border-radius: 40px;
+            margin: 4px 6px 4px 0;
+            font-size: 0.9rem;
+            color: #ccc4ff;
+            border: 1px solid #4b4b7a;
+        }
+
+        .text-input-area {
+            margin: 20px 0;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 20px;
+            background: #111126;
+            border: 2px solid #34345c;
+            border-radius: 28px;
+            color: white;
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #8066ff;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+
+        button {
+            background: #2f2f55;
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 60px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid #4a4a78;
+            box-shadow: 0 8px 16px #00000040;
+            flex: 1 1 auto;
+        }
+
+        button.primary {
+            background: linear-gradient(145deg, #6c4eff, #9575ff);
+            border: none;
+            box-shadow: 0 8px 20px #4b3599;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            filter: brightness(1.15);
+        }
+
+        /* Турнирная зона */
+        .tournament-area {
+            background: #18182e;
+            border-radius: 42px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 1px solid #40406a;
+        }
+
+        .progress {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.2rem;
+            color: #bdb4ff;
+        }
+
+        .vs-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            flex: 1 1 300px;
+            min-width: 280px;
+            background: #242442;
+            border-radius: 36px;
+            padding: 25px 20px;
+            text-align: center;
+            border: 2px solid #3d3d68;
+            transition: 0.15s;
+            box-shadow: 0 15px 30px #0b0b18;
+        }
+
+        .card:hover {
+            border-color: #9f8bff;
+            background: #2a2a50;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            word-break: break-word;
+            color: #dfd7ff;
+        }
+
+        .preview {
+            margin: 15px 0;
+            max-width: 100%;
+            border-radius: 24px;
+            background: #121225;
+        }
+
+        audio, video, img {
+            width: 100%;
+            border-radius: 24px;
+            max-height: 250px;
+            object-fit: contain;
+            background: #0a0a1a;
+        }
+
+        .text-preview {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #0c0c22;
+            border-radius: 24px;
+            text-align: left;
+            white-space: pre-wrap;
+            font-size: 1rem;
+            border: 1px solid #3a3a60;
+        }
+
+        .vs-divider {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #8f7cff;
+            text-shadow: 0 0 20px #735eff;
+            background: #1f1f3b;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 3px solid #6250b0;
+        }
+
+        .choose-btn {
+            background: #4b4080;
+            border: none;
+            color: white;
+            padding: 14px 30px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 220px;
+        }
+
+        .results-block {
+            background: #131326;
+            border-radius: 42px;
+            padding: 30px;
+            margin-top: 25px;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #2f2f53;
+            font-size: 1.1rem;
+        }
+
+        .result-rank {
+            font-size: 1.8rem;
+            font-weight: 800;
+            min-width: 70px;
+            color: #b6a2ff;
+        }
+
+        .result-name {
+            flex: 1;
+            margin-left: 15px;
+        }
+
+        .footer-note {
+            margin-top: 25px;
+            color: #7a75ad;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container" id="app">
+    <h1>⚡ ТУРНИР ВСЕГО</h1>
+    <div class="subhead">Аудио · Видео · Фото · Текст — выбери лучшее в битвах</div>
+
+    <!-- Переключатель режимов -->
+    <div class="mode-switch" id="modeSwitch">
+        <button class="mode-btn active" data-mode="audio">🎵 Аудио</button>
+        <button class="mode-btn" data-mode="video">🎬 Видео</button>
+        <button class="mode-btn" data-mode="image">🖼️ Фото</button>
+        <button class="mode-btn" data-mode="text">📝 Текст</button>
+    </div>
+
+    <!-- Динамическая область ввода -->
+    <div class="input-area" id="inputArea"></div>
+
+    <!-- Список элементов (загруженных или введённых) -->
+    <div id="itemsList" class="file-list" style="display: none;"></div>
+
+    <!-- Кнопки управления -->
+    <div class="btn-group">
+        <button id="startBtn" class="primary" disabled>🔀 Перемешать и начать турнир</button>
+        <button id="resetBtn" disabled>🔄 Сбросить всё</button>
+    </div>
+
+    <!-- Зона турнира -->
+    <div id="tournamentZone" class="tournament-area" style="display: none;">
+        <div class="progress" id="progressText">Раунд 1 · Поединок 1</div>
+        <div class="vs-container" id="vsContainer"></div>
+        <div style="display: flex; justify-content: center; margin-top: 25px;">
+            <button id="finishEarlyBtn">🏁 Завершить и показать топ</button>
+        </div>
+    </div>
+
+    <!-- Результаты -->
+    <div id="resultsZone" class="results-block" style="display: none;">
+        <h2 style="margin-bottom: 20px;">🏆 Итоговый рейтинг</h2>
+        <div id="ranking"></div>
+        <button id="newTournamentBtn" style="margin-top: 25px; background: #5c4c9a;">✨ Новый турнир</button>
+    </div>
+
+    <div class="footer-note">
+        💡 Для текста: вставь строки (каждая с новой строки) или загрузи .txt
+    </div>
+</div>
+
+<script>
+(function() {
+    // ------ СОСТОЯНИЕ ------
+    let currentMode = 'audio';        // audio, video, image, text
+    let items = [];                  // массив объектов: { id, name, data, type, ... }
+    let tournament = {
+        bracket: [],                  // текущие пары
+        currentIndex: 0,
+        winners: [],
+        roundHistory: [],
+        finalRanking: []
+    };
+
+    // DOM элементы
+    const modeSwitch = document.getElementById('modeSwitch');
+    const inputArea = document.getElementById('inputArea');
+    const itemsList = document.getElementById('itemsList');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const tournamentZone = document.getElementById('tournamentZone');
+    const resultsZone = document.getElementById('resultsZone');
+    const progressText = document.getElementById('progressText');
+    const vsContainer = document.getElementById('vsContainer');
+    const rankingDiv = document.getElementById('ranking');
+    const finishEarlyBtn = document.getElementById('finishEarlyBtn');
+    const newTournamentBtn = document.getElementById('newTournamentBtn');
+
+    // ------ ВСПОМОГАТЕЛЬНЫЕ ------
+    function escapeHtml(unsafe) {
+        return unsafe.replace(/[&<>"]/g, m => {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            if (m === '"') return '&quot;';
+            return m;
+        });
+    }
+
+    function generateId() {
+        return Date.now() + '-' + Math.random().toString(36);
+    }
+
+    // Отрисовка списка загруженного
+    function renderItemsList() {
+        if (items.length === 0) {
+            itemsList.style.display = 'none';
+            return;
+        }
+        itemsList.style.display = 'block';
+        let html = '';
+        items.forEach((item, idx) => {
+            let displayName = item.name.length > 35 ? item.name.slice(0,32)+'…' : item.name;
+            html += `<span class="file-item">${idx+1}. ${escapeHtml(displayName)}</span>`;
+        });
+        itemsList.innerHTML = html + `<span style="margin-left: 12px;">всего: ${items.length}</span>`;
+    }
+
+    // Сброс турнира (сохраняем items)
+    function resetTournamentOnly() {
+        tournament = {
+            bracket: [],
+            currentIndex: 0,
+            winners: [],
+            roundHistory: [],
+            finalRanking: []
+        };
+        tournamentZone.style.display = 'none';
+        resultsZone.style.display = 'none';
+    }
+
+    // Полная очистка
+    function resetAll() {
+        items = [];
+        resetTournamentOnly();
+        renderItemsList();
+        startBtn.disabled = true;
+        resetBtn.disabled = true;
+        // Очистить поля ввода в зависимости от режима
+        renderInputArea();
+    }
+
+    // ------ РЕЖИМЫ: ОТРИСОВКА ИНТЕРФЕЙСА ВВОДА ------
+    function renderInputArea() {
+        const mode = currentMode;
+        let html = '';
+
+        if (mode === 'audio' || mode === 'video' || mode === 'image') {
+            html = `
+                <div class="drop-zone" id="dropZone">
+                    📂 Перетащи файлы сюда или нажми для выбора<br>
+                    <span style="opacity:0.7; font-size:0.9rem;">
+                        ${mode === 'audio' ? 'MP3, M4A' : mode === 'video' ? 'MP4, WebM, MOV' : 'JPG, PNG, GIF, WEBP'}
+                    </span>
+                    <input type="file" id="fileInput" multiple accept="*/*" style="display: none;">
+                </div>
+            `;
+        } else if (mode === 'text') {
+            html = `
+                <div class="text-input-area">
+                    <textarea id="textInput" placeholder="Введи строки (каждая с новой строки)..."></textarea>
+                    <div style="display:flex; gap:12px; margin-top:15px;">
+                        <button id="addTextBtn">➕ Добавить строки</button>
+                        <button id="loadTxtBtn">📄 Загрузить .txt</button>
+                        <input type="file" id="txtFileInput" accept=".txt,text/plain" style="display:none;">
+                    </div>
+                </div>
+            `;
+        }
+
+        inputArea.innerHTML = html;
+
+        // Навесить обработчики для файлового режима
+        if (mode === 'audio' || mode === 'video' || mode === 'image') {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                const files = Array.from(e.dataTransfer.files);
+                handleFileUpload(files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                handleFileUpload(Array.from(e.target.files));
+            });
+        }
+
+        // Обработчики для текстового режима
+        if (mode === 'text') {
+            const addTextBtn = document.getElementById('addTextBtn');
+            const loadTxtBtn = document.getElementById('loadTxtBtn');
+            const txtFileInput = document.getElementById('txtFileInput');
+
+            addTextBtn.addEventListener('click', () => {
+                const textarea = document.getElementById('textInput');
+                const raw = textarea.value;
+                if (!raw.trim()) return;
+                
+                const lines = raw.split(/\r?\n/).filter(line => line.trim() !== '');
+                lines.forEach(line => {
+                    items.push({
+                        id: generateId(),
+                        name: line.slice(0, 60),
+                        data: line,
+                        type: 'text'
+                    });
+                });
+                textarea.value = ''; // очистить
+                renderItemsList();
+                startBtn.disabled = items.length < 2;
+                resetBtn.disabled = false;
+            });
+
+            loadTxtBtn.addEventListener('click', () => {
+                txtFileInput.click();
+            });
+
+            txtFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const content = ev.target.result;
+                    const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+                    lines.forEach(line => {
+                        items.push({
+                            id: generateId(),
+                            name: line.slice(0, 60),
+                            data: line,
+                            type: 'text'
+                        });
+                    });
+                    renderItemsList();
+                    startBtn.disabled = items.length < 2;
+                    resetBtn.disabled = false;
+                };
+                reader.readAsText(file);
+                txtFileInput.value = '';
+            });
+        }
+    }
+
+    // Обработка загрузки файлов для аудио/видео/фото
+    function handleFileUpload(files) {
+        const mode = currentMode;
+        let validFiles = [];
+
+        if (mode === 'audio') {
+            validFiles = files.filter(f => f.type.includes('audio') || f.name.match(/\.(mp3|m4a|wav|ogg)$/i));
+        } else if (mode === 'video') {
+            validFiles = files.filter(f => f.type.includes('video') || f.name.match(/\.(mp4|webm|mov|avi)$/i));
+        } else if (mode === 'image') {
+            validFiles = files.filter(f => f.type.includes('image') || f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+        }
+
+        if (validFiles.length === 0) {
+            alert('Нет подходящих файлов для этого режима');
+            return;
+        }
+
+        validFiles.forEach(f => {
+            items.push({
+                id: generateId(),
+                name: f.name,
+                data: f,
+                type: mode,
+                file: f
+            });
+        });
+
+        renderItemsList();
+        startBtn.disabled = items.length < 2;
+        resetBtn.disabled = false;
+    }
+
+    // ------ ТУРНИРНАЯ ЛОГИКА (универсальная) ------
+    function startTournament() {
+        if (items.length < 2) return;
+
+        resetTournamentOnly();
+        
+        // Перемешать
+        const shuffled = [...items].sort(() => Math.random() - 0.5);
+        
+        // Создать пары первого раунда
+        const matches = [];
+        for (let i = 0; i < shuffled.length; i += 2) {
+            if (i + 1 < shuffled.length) {
+                matches.push({
+                    a: shuffled[i],
+                    b: shuffled[i+1],
+                    winner: null,
+                    round: 0
+                });
+            } else {
+                // Нечётное кол-во — бай
+                matches.push({
+                    a: shuffled[i],
+                    b: null,
+                    winner: shuffled[i],
+                    bye: true,
+                    round: 0
+                });
+            }
+        }
+
+        tournament.bracket = matches;
+        tournament.currentIndex = 0;
+        tournament.winners = [];
+        tournament.roundHistory = [];
+
+        tournamentZone.style.display = 'block';
+        resultsZone.style.display = 'none';
+        
+        showCurrentMatch();
+    }
+
+    function showCurrentMatch() {
+        if (!tournament.bracket.length || tournament.currentIndex >= tournament.bracket.length) {
+            // Попытаться построить следующий раунд
+            if (!tryBuildNextRound()) {
+                finishTournament();
+            }
+            return;
+        }
+
+        const match = tournament.bracket[tournament.currentIndex];
+        
+        // Бай
+        if (match.bye) {
+            tournament.winners.push(match.winner);
+            tournament.currentIndex++;
+            showCurrentMatch();
+            return;
+        }
+
+        // Уже завершён (на всякий случай)
+        if (match.winner) {
+            tournament.currentIndex++;
+            showCurrentMatch();
+            return;
+        }
+
+        // Обновить UI
+        const totalMatches = tournament.bracket.length;
+        progressText.innerText = `Раунд ${tournament.roundHistory.length + 1} · Поединок ${tournament.currentIndex+1} из ${totalMatches}`;
+
+        renderMatch(match);
+    }
+
+    function renderMatch(match) {
+        const a = match.a;
+        const b = match.b;
+
+        // Функция для создания карточки элемента
+        function renderCard(item, side) {
+            const mode = item.type;
+            let previewHtml = '';
+
+            if (mode === 'audio') {
+                const url = URL.createObjectURL(item.data);
+                previewHtml = `<audio controls src="${url}"></audio>`;
+            } else if (mode === 'video') {
+                const url = URL.createObjectURL(item.data);
+                previewHtml = `<video controls src="${url}"></video>`;
+            } else if (mode === 'image') {
+                const url = URL.createObjectURL(item.data);
+                previewHtml = `<img src="${url}" alt="preview">`;
+            } else if (mode === 'text') {
+                previewHtml = `<div class="text-preview">${escapeHtml(item.data)}</div>`;
+            }
+
+            return `
+                <div class="card">
+                    <div class="card-title">${escapeHtml(item.name)}</div>
+                    ${previewHtml}
+                    <button class="choose-btn" data-side="${side}">🏆 Выбрать</button>
+                </div>
+            `;
+        }
+
+        vsContainer.innerHTML = `
+            ${renderCard(a, 'a')}
+            <div class="vs-divider">VS</div>
+            ${renderCard(b, 'b')}
+        `;
+
+        // Обработчики
+        vsContainer.querySelectorAll('.choose-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const side = e.target.getAttribute('data-side');
+                const winner = side === 'a' ? match.a : match.b;
+                
+                // Освободить URL объектов (для файлов)
+                if (match.a.data instanceof File) URL.revokeObjectURL(document.querySelector('audio source, video source, img')?.src);
+                
+                match.winner = winner;
+                tournament.winners.push(winner);
+                
+                tournament.currentIndex++;
+                showCurrentMatch();
+            });
+        });
+    }
+
+    function tryBuildNextRound() {
+        if (tournament.winners.length === 0) return false;
+        
+        // Если один победитель — финал
+        if (tournament.winners.length === 1) {
+            finishTournament();
+            return true;
+        }
+
+        // Сохранить историю
+        tournament.roundHistory.push(tournament.bracket);
+
+        // Построить следующий раунд
+        const nextMatches = [];
+        for (let i = 0; i < tournament.winners.length; i += 2) {
+            if (i + 1 < tournament.winners.length) {
+                nextMatches.push({
+                    a: tournament.winners[i],
+                    b: tournament.winners[i+1],
+                    winner: null,
+                    round: tournament.roundHistory.length
+                });
+            } else {
+                nextMatches.push({
+                    a: tournament.winners[i],
+                    b: null,
+                    winner: tournament.winners[i],
+                    bye: true,
+                    round: tournament.roundHistory.length
+                });
+            }
+        }
+
+        tournament.bracket = nextMatches;
+        tournament.winners = [];
+        tournament.currentIndex = 0;
+        
+        showCurrentMatch();
+        return true;
+    }
+
+    // Финиш и построение топа (упрощённо, но наглядно)
+    function finishTournament() {
+        // Собрать результаты на основе истории
+        // (Здесь можно реализовать полное дерево, но для демо — простой порядок)
+        
+        // Простейший топ: все items в порядке "победитель, финалист, полуфиналисты..."
+        // для наглядности покажем исходный список, но выделим первых.
+        
+        // Составим карту последнего раунда
+        let ranked = [];
+        
+        // Победитель — последний в winners если есть
+        if (tournament.winners.length === 1) {
+            ranked.push(tournament.winners[0]);
+        }
+        
+        // Добавим остальные из items, исключая уже добавленных
+        const addedIds = new Set(ranked.map(i => i.id));
+        items.forEach(item => {
+            if (!addedIds.has(item.id)) ranked.push(item);
+        });
+
+        tournament.finalRanking = ranked;
+        displayRanking(ranked);
+        
+        tournamentZone.style.display = 'none';
+        resultsZone.style.display = 'block';
+    }
+
+    function displayRanking(ranked) {
+        let html = '';
+        ranked.forEach((item, idx) => {
+            let medal = '';
+            if (idx === 0) medal = '🥇';
+            else if (idx === 1) medal = '🥈';
+            else if (idx === 2) medal = '🥉';
+            else medal = `${idx+1}.`;
+            
+            html += `<div class="result-item">
+                <span class="result-rank">${medal}</span>
+                <span class="result-name">${escapeHtml(item.name)}</span>
+            </div>`;
+        });
+        rankingDiv.innerHTML = html;
+    }
+
+    // ------ СОБЫТИЯ ------
+    modeSwitch.addEventListener('click', (e) => {
+        const btn = e.target.closest('.mode-btn');
+        if (!btn) return;
+        
+        const mode = btn.dataset.mode;
+        if (!mode) return;
+
+        // Активировать кнопку
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        currentMode = mode;
+        resetAll(); // очищаем всё при смене режима
+    });
+
+    startBtn.addEventListener('click', startTournament);
+
+    resetBtn.addEventListener('click', resetAll);
+
+    finishEarlyBtn.addEventListener('click', () => {
+        finishTournament();
+    });
+
+    newTournamentBtn.addEventListener('click', () => {
+        resetTournamentOnly();
+        startBtn.disabled = items.length < 2;
+    });
+
+    // Инициализация
+    renderInputArea();
+})();
+</script>
+</body>
+</html>
